@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #FAF8F5;
+    --foreground: #0F172A;
+    --surface-1: #FFFFFF;
+    --surface-2: #FFFFFF;
+    --surface-3: #F8FAFC;
+    --card: #FFFFFF;
+    --card-foreground: #0F172A;
+    --card-muted: #F8FAFC;
+    --muted: #F1F5F9;
+    --muted-foreground: #475569;
+    --border: #E2E8F0;
+    --border-subtle: #F1F5F9;
+    --input: #E2E8F0;
+    --input-bg: #FFFFFF;
+    --ring: #0D9488;
+    --primary: #0D9488;
+    --primary-foreground: #FFFFFF;
+    --accent: #EA580C;
+    --accent-foreground: #FFFFFF;
+  }
+
+  .dark {
+    --background: #0B1120;
+    --foreground: #F8FAFC;
+    --surface-1: #131D33;
+    --surface-2: #1E293B;
+    --surface-3: #25334D;
+    --card: #131D33;
+    --card-foreground: #F8FAFC;
+    --card-muted: #1E293B;
+    --muted: #1E293B;
+    --muted-foreground: #94A3B8;
+    --border: #243352;
+    --border-subtle: #1A2742;
+    --input: #2E4166;
+    --input-bg: #162238;
+    --ring: #14B8A6;
+    --primary: #14B8A6;
+    --primary-foreground: #0B1120;
+    --accent: #FB923C;
+    --accent-foreground: #0B1120;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Universal smooth theme transitions for surfaces, borders, text and shadows */
+  html, body, header, nav, main, aside, footer, article, section, div, button, input, select, textarea, p, span, h1, h2, h3, h4, h5, h6 {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+
+  /* Exclude animated elements, canvas, spinners, and framer-motion transforms from slow transitions */
+  .no-theme-transition,
+  [data-framer-motion],
+  .animate-spin,
+  .animate-ping,
+  .animate-bounce,
+  .animate-pulse,
+  canvas {
+    transition-property: none !important;
+  }
+}
+
+/* Custom elder-friendly tactile buttons (Light) */
+.btn-tactile-teal {
+  box-shadow: 0 5px 0 0 #0f766e;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-tactile-teal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 0 #0f766e;
+}
+.btn-tactile-teal:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 0 #0f766e;
+}
+
+.btn-tactile-orange {
+  box-shadow: 0 5px 0 0 #c2410c;
+  transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-tactile-orange:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 0 #c2410c;
+}
+.btn-tactile-orange:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 0 #c2410c;
+}
+
+/* Custom elder-friendly tactile buttons (Dark) */
+.dark .btn-tactile-teal {
+  box-shadow: 0 5px 0 0 #094e48;
+}
+.dark .btn-tactile-teal:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 0 #094e48;
+}
+.dark .btn-tactile-teal:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 0 #094e48;
+}
+
+.dark .btn-tactile-orange {
+  box-shadow: 0 5px 0 0 #9a3412;
+}
+.dark .btn-tactile-orange:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 0 #9a3412;
+}
+.dark .btn-tactile-orange:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 0 #9a3412;
+}
+
+/* Subtle background grain & ambient warm aura (Light) */
+.bg-ner-pattern {
+  background-color: #FAF8F5;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(234, 88, 12, 0.05) 0px, transparent 50%),
+    radial-gradient(#0d9488 0.75px, transparent 0.75px), 
+    radial-gradient(#ea580c 0.75px, #FAF8F5 0.75px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  background-position: 0 0, 0 0, 0 0, 16px 16px;
+}
+
+/* Subtle background grain & ambient nocturnal aura (Dark) */
+.dark .bg-ner-pattern {
+  background-color: #0B1120;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(251, 146, 60, 0.07) 0px, transparent 50%),
+    radial-gradient(#14B8A6 0.75px, transparent 0.75px), 
+    radial-gradient(#FB923C 0.75px, #0B1120 0.75px);
+  background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+  background-position: 0 0, 0 0, 0 0, 16px 16px;
+}
+
+/* Accessibility high-contrast focus rings */
+*:focus-visible {
+  outline: 3px solid #0d9488;
+  outline-offset: 3px;
+}
+
+.dark *:focus-visible {
+  outline: 3px solid #14b8a6;
+  outline-offset: 3px;
+}
+
+/* Smooth custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #0B1120;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #243352;
+  border-radius: 9999px;
+}
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* PIN Keypad Ultra-Fast Interaction & Shake Animation */
+.pin-keypad-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  transition-property: transform, background-color, border-color, box-shadow !important;
+  transition-duration: 90ms !important;
+  transition-timing-function: cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+.pin-keypad-btn:active {
+  transform: scale(0.94);
+}
+
+@keyframes pin-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+.animate-pin-shake {
+  animation: pin-shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+}
+

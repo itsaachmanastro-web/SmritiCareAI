@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%230f766e'/><path d='M50,15 A35,35 0 0,0 20,50 A35,35 0 0,0 50,85 Z' fill='%23ea580c'/><circle cx='38' cy='42' r='5' fill='%23ffffff'/><circle cx='62' cy='42' r='5' fill='%23ffffff'/><path d='M35,65 Q50,75 65,65' stroke='%23ffffff' stroke-width='4' fill='none' stroke-linecap='round'/></svg>" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>SmritiCare — Smarter Care for Brighter Minds</title>
+    <meta name="description" content="SmritiCare — AI-powered cognitive support, meaningful routines, and connected care for everyday life." />
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Theme Initialization Script (prevents theme flash before React mounts) -->
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('smriticare-theme') || localStorage.getItem('smriticare_theme');
+          var isDark = saved === 'dark' || (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.style.colorScheme = 'dark';
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.style.colorScheme = 'light';
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-background text-foreground antialiased min-h-screen selection:bg-smriti-teal-200 selection:text-smriti-teal-900 transition-colors duration-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
