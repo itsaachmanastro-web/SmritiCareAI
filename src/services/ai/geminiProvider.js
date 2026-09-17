@@ -39,7 +39,8 @@ export class GeminiProvider {
         })
       });
 
-      if (!response.ok) {
+      const contentType = response.headers ? (response.headers.get('content-type') || '') : '';
+      if (!response.ok || !contentType.includes('application/json')) {
         return null;
       }
 

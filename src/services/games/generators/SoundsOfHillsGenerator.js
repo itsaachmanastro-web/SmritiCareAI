@@ -68,13 +68,8 @@ export function generateSoundRound(options = {}) {
   // 2. Select target instrument
   const target = eligibleTargets[Math.floor(rng() * eligibleTargets.length)];
 
-  // 3. Select distractors based on difficulty
-  let optionCount = 4;
-  if (difficulty === 'easy') {
-    optionCount = 2; // Only 2 options (1 target + 1 distinct distractor)
-  } else if (difficulty === 'hard') {
-    optionCount = 4;
-  }
+  // 3. Select distractors based on difficulty: Easy = 2, Medium = 3, Hard = 4
+  const optionCount = difficulty === 'easy' ? 2 : difficulty === 'medium' ? 3 : 4;
 
   const remainingInstruments = INSTRUMENTS_CATALOG.filter((i) => i.id !== target.id);
   const selectedDistractors = sampleArray(remainingInstruments, optionCount - 1, rng);

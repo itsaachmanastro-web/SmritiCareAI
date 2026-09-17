@@ -15,6 +15,28 @@ const getBaseUrl = () => {
   return '';
 };
 
+async function safeJson(response, fallback = {}) {
+  try {
+    const contentType = response.headers ? (response.headers.get('content-type') || '') : '';
+    if (contentType.includes('application/json')) {
+      return await response.json();
+    }
+    const text = await response.text();
+    return {
+      ...fallback,
+      error: response.status === 405
+        ? '❌ HTTP 405 Method Not Allowed: The endpoint did not accept the request method. Check serverless function deployment.'
+        : `Server returned non-JSON response (${response.status}): ${text.slice(0, 100)}`
+    };
+  } catch (e) {
+    return {
+      ...fallback,
+      error: `Could not parse server response: ${e.message}`
+    };
+  }
+}
+
+
 export class AIService {
   constructor() {
     this._currentTestPromise = null;
@@ -26,7 +48,8 @@ export class AIService {
   async getServerStatus() {
     try {
       const res = await fetch(`${getBaseUrl()}/api/ai/status`);
-      if (res.ok) {
+      const contentType = res.headers?.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         return await res.json();
       }
     } catch (err) {
@@ -39,12 +62,16 @@ export class AIService {
    * Configure API key securely on the server
    */
   async configureServerKey(apiKey, model = null) {
-    const res = await fetch(`${getBaseUrl()}/api/ai/configure-key`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ apiKey, model })
-    });
-    return await res.json();
+    try {
+      const res = await fetch(`${getBaseUrl()}/api/ai/configure-key`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey, model })
+      });
+      return await safeJson(res, { success: false });
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
   }
 
   /**
@@ -68,14 +95,16 @@ export class AIService {
           })
         });
 
-        let data = {};
-        try {
-          data = await res.json();
-        } catch {
-          data = { error: `Server returned status ${res.status}` };
-        }
+        const data = await safeJson(res, {
+          connected: false,
+          status: res.status,
+          error: res.status === 405
+            ? '❌ HTTP 405 Method Not Allowed: POST /api/ai/test was rejected. Verify Vercel Serverless Functions in api/ and GEMINI_API_KEY environment variable.'
+            : `Server returned status ${res.status}`
+        });
 
         return {
+          connected: Boolean(data.connected),
           ...data,
           httpStatus: res.status,
           status: data.status || res.status
@@ -114,7 +143,8 @@ export class AIService {
   async getSystemPrompt() {
     try {
       const res = await fetch(`${getBaseUrl()}/api/ai/system-prompt`);
-      if (res.ok) {
+      const contentType = res.headers?.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         const data = await res.json();
         if (data.systemPrompt && typeof window !== 'undefined' && window.localStorage) {
           localStorage.setItem('smriti_system_prompt', data.systemPrompt);
@@ -152,7 +182,8 @@ export class AIService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ systemPrompt: cleanPrompt })
       });
-      if (res.ok) {
+      const contentType = res.headers?.get('content-type') || '';
+      if (res.ok && contentType.includes('application/json')) {
         return await res.json();
       }
     } catch (err) {
@@ -315,10 +346,7 @@ export class AIService {
       }
 
       if (response.status === 429) {
-        let errData = {};
-        try {
-          errData = await response.json();
-        } catch {}
+        const errData = await safeJson(response, {});
 
         console.warn('Gemini chat API rate-limited (429), serving local SmritiCare fallback:', errData);
         const localResult = await localFallbackProvider.generateResponse(userQuery, {
@@ -344,6 +372,10 @@ export class AIService {
       }
 
       if (response.ok) {
+        const contentType = response.headers?.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+          throw new Error('Server returned non-JSON response');
+        }
         const data = await response.json();
 
         // If Gemini returned a generated response, use it!

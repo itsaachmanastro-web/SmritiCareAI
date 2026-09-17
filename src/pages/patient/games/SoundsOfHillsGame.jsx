@@ -115,13 +115,20 @@ export default function SoundsOfHillsGame() {
     setTimeout(() => {
       const soundFn = INSTRUMENT_SOUNDS[roundData.target.id] || roundData.target.soundFn;
       if (typeof soundFn === 'function') {
-        try { soundFn(); } catch (e) { console.warn(e); }
+        try { soundFn(); } catch (e) { console.warn('Audio play warning:', e); }
       }
-      speak(roundData.target.prompt);
+      if (typeof speak === 'function' && roundData.target.prompt) {
+        try { speak(roundData.target.prompt); } catch {}
+      }
     }, 450);
   };
 
   const startGame = () => {
+    // Unlock Web Audio context during user click gesture
+    try {
+      playCardFlipSound();
+    } catch {}
+
     // Generate procedural acoustic session with zero hardcoded orders
     const generatedRounds = generateSoundsOfHillsSession({
       difficulty,
@@ -144,9 +151,11 @@ export default function SoundsOfHillsGame() {
     if (targetItem) {
       const soundFn = INSTRUMENT_SOUNDS[targetItem.id] || targetItem.soundFn;
       if (typeof soundFn === 'function') {
-        try { soundFn(); } catch (e) { console.warn(e); }
+        try { soundFn(); } catch (e) { console.warn('Audio replay warning:', e); }
       }
-      speak(targetItem.prompt);
+      if (typeof speak === 'function' && targetItem.prompt) {
+        try { speak(targetItem.prompt); } catch {}
+      }
     }
   };
 
@@ -179,9 +188,12 @@ export default function SoundsOfHillsGame() {
     if (feedback !== null) return;
     clearInterval(roundTimerRef.current);
 
-    item.soundFn();
+    const soundFn = INSTRUMENT_SOUNDS[item.id] || item.soundFn;
+    if (typeof soundFn === 'function') {
+      try { soundFn(); } catch (e) { console.warn('Audio play error:', e); }
+    }
 
-    const isCorrect = item.id === targetItem.id;
+    const isCorrect = item.id === targetItem?.id;
 
     if (isCorrect) {
       playMatchSuccessSound();
@@ -195,7 +207,7 @@ export default function SoundsOfHillsGame() {
         }
         return next;
       });
-      setFeedback({ correct: false, reason: `That was the ${item.name}. Listen closely for the next one!` });
+      setFeedback({ correct: false, reason: `That was the ${item.name.split(' (')[0]}. Listen closely for the next one!` });
     }
 
     advanceAfterDelay(isCorrect);

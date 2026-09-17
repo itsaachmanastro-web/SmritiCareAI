@@ -14,7 +14,8 @@ import {
   getGameDifficulty,
   recordChallengeResult,
   generateMekhelaGameSession,
-  scoreToDiscreteLevel
+  scoreToDiscreteLevel,
+  AVAILABLE_MOTIFS
 } from '../../../services/games';
 
 // Vector SVG Traditional Weaving Pattern Tiles
@@ -59,11 +60,33 @@ function MizoLozenge({ className = "w-12 h-12" }) {
   );
 }
 
+function JaapiGoldPattern({ className = "w-12 h-12" }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="8" fill="#FEF9C3" stroke="#CA8A04" strokeWidth="2" />
+      <polygon points="24,8 38,36 10,36" fill="#EAB308" stroke="#CA8A04" strokeWidth="2" />
+      <circle cx="24" cy="24" r="4" fill="#DC2626" />
+      <circle cx="24" cy="14" r="2" fill="#CA8A04" />
+    </svg>
+  );
+}
+
+function GamusaRedPattern({ className = "w-12 h-12" }) {
+  return (
+    <svg className={className} viewBox="0 0 48 48" fill="none">
+      <rect width="48" height="48" rx="8" fill="#FFF1F2" stroke="#E11D48" strokeWidth="2" />
+      <path d="M12 14 L24 22 L36 14 M12 24 L24 32 L36 24 M12 34 L24 42 L36 34" stroke="#E11D48" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 const MOTIFS = [
   { id: 'kingkhap', name: 'Muga Kingkhap (Golden Diamond)', component: KingkhapDiamond },
   { id: 'kesu', name: 'Assam Kesu (Red Motif)', component: KesuPeacock },
   { id: 'naga', name: 'Naga Woven Chevron', component: NagaChevron },
   { id: 'mizo', name: 'Mizo Puan Lozenge', component: MizoLozenge },
+  { id: 'jaapi_gold', name: 'Jaapi Conical Motif', component: JaapiGoldPattern },
+  { id: 'gamusa_red', name: 'Gamusa Red Phool', component: GamusaRedPattern },
 ];
 
 export default function MekhelaPatternGame() {
@@ -123,6 +146,10 @@ export default function MekhelaPatternGame() {
   }, [currentUserId]);
 
   const startGame = () => {
+    try {
+      playCardFlipSound();
+    } catch {}
+
     // Generate procedural non-repeating pattern session
     const configs = generateMekhelaGameSession({
       difficulty,
@@ -226,7 +253,7 @@ export default function MekhelaPatternGame() {
 
   const activeRoundConfig = roundConfigs[currentRound];
   const currentPattern = activeRoundConfig?.pattern || [];
-  const currentOptions = activeRoundConfig?.options || AVAILABLE_MOTIFS;
+  const currentOptions = activeRoundConfig?.options || (Array.isArray(AVAILABLE_MOTIFS) ? AVAILABLE_MOTIFS : MOTIFS.map((m) => m.id));
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 md:py-8">

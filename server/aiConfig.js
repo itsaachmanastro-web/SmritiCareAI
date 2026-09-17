@@ -3,12 +3,12 @@
  * Provides dynamic model verification, candidate resolution, and safe error mapping.
  */
 
-export const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+export const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 
 export const PREFERRED_FLASH_MODELS = [
+  'gemini-3.6-flash',
   'gemini-3.5-flash',
   'gemini-2.5-flash',
-  'gemini-2.0-flash',
   'gemini-flash'
 ];
 
@@ -430,7 +430,7 @@ export async function testGenerateContent(apiKey, modelName) {
       ],
       generationConfig: {
         temperature: 0.3,
-        maxOutputTokens: 60
+        maxOutputTokens: 256
       }
     })
   }, 2);
@@ -447,11 +447,15 @@ export async function testGenerateContent(apiKey, modelName) {
   try {
     const data = await result.response.json();
     const parts = data.candidates?.[0]?.content?.parts || [];
-    const replyText = parts
+    let replyText = parts
       .filter(p => typeof p.text === 'string' && !p.thought)
       .map(p => p.text)
       .join('')
       .trim();
+
+    if (!replyText && parts.length > 0) {
+      replyText = parts.map(p => p.text || '').join('').trim();
+    }
 
     if (!replyText) {
       return {

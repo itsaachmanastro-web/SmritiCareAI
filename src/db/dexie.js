@@ -99,6 +99,41 @@ db.version(3).stores({
   }
 });
 
+// Version 4 (Adaptive AI Cognitive Difficulty Engine & Question Fingerprints)
+db.version(4).stores({
+  users: '++id, email, role, name, isDemo, isVerified, status, createdAt, updatedAt, lastLoginAt',
+  sessions: '++id, userId, token, expiresAt, createdAt',
+  patientProfiles: '++id, userId, isDemo, name, age, location, createdAt, updatedAt',
+  gameSessions: '++id, userId, patientId, isDemo, gameName, gameType, score, difficultyLevel, completedAt, createdAt',
+  cognitiveScores: '++id, userId, patientId, isDemo, date, domain, category, score, timestamp, createdAt',
+  reminders: '++id, userId, patientId, isDemo, targetUserId, createdBy, scheduledAt, status, title, time, dueAt, done, completed, type, createdAt, updatedAt',
+  healthRecords: '++id, userId, patientId, isDemo, type, title, date, createdAt',
+  conversations: '++id, userId, isDemo, role, timestamp, createdAt',
+  syncQueue: '++id, userId, patientId, isDemo, entityType, entityId, operation, status, createdAt, retryCount, lastAttemptAt',
+  adaptiveProfiles: 'userId, overallDifficulty, memoryMatch, sequenceMemory, patternRecognition, auditoryAttention, updatedAt',
+  gameChallenges: '++id, [userId+gameType], userId, sessionId, gameType, difficulty, questionId, contentHash, correct, responseTimeMs, score, completedAt',
+  usedQuestionFingerprints: '++id, userId, contentHash, gameType, templateId, usedAt'
+}).upgrade(async (tx) => {
+  try {
+    const existingUsers = await tx.table('users').toArray();
+    for (const u of existingUsers) {
+      if (u.id) {
+        await tx.table('adaptiveProfiles').put({
+          userId: u.id,
+          overallDifficulty: 0.50,
+          memoryMatch: 0.50,
+          sequenceMemory: 0.45,
+          patternRecognition: 0.50,
+          auditoryAttention: 0.45,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+  } catch (err) {
+    console.warn('Dexie v4 upgrade notice:', err);
+  }
+});
+
 // Initial curated subscription plans
 export const INITIAL_SUBSCRIPTION_PLANS = [
   {
