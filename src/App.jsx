@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
+import Sidebar from './components/common/Sidebar';
 import PatientNav from './components/patient/PatientNav';
 import EmergencyCallModal from './components/patient/EmergencyCallModal';
 import AiAssistantDrawer from './components/ai/AiAssistantDrawer';
@@ -35,7 +36,14 @@ import AuthDebugPanel from './components/common/AuthDebugPanel';
 import { useAuth } from './context/AuthContext';
 import { useAssistant } from './context/AssistantContext';
 
-function RequireCaregiver({ children, currentUser, role }) {
+function RequireCaregiver({ children, currentUser, role, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0D1217] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
   if (!currentUser) {
     return <Navigate to="/login?role=caregiver" replace />;
   }
@@ -48,7 +56,14 @@ function RequireCaregiver({ children, currentUser, role }) {
   return children;
 }
 
-function RequireClinician({ children, currentUser, role }) {
+function RequireClinician({ children, currentUser, role, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#070D0E] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
   if (!currentUser) {
     return <Navigate to="/login?role=healthcare" replace />;
   }
@@ -61,7 +76,14 @@ function RequireClinician({ children, currentUser, role }) {
   return children;
 }
 
-function RequireAuth({ children, currentUser }) {
+function RequireAuth({ children, currentUser, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#070D0E] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
   if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
@@ -70,28 +92,40 @@ function RequireAuth({ children, currentUser }) {
 
 export default function App() {
   const location = useLocation();
-  const { currentUser, role } = useAuth();
+  const { currentUser, role, isLoading } = useAuth();
   const { isOpen: isAssistantOpen, closeAssistant, openAssistant, contextData } = useAssistant();
   const [isEmergencyOpen, setIsEmergencyOpen] = useState(false);
 
   // Check if current route is patient experience
-  const isPatientRoute = location.pathname.startsWith('/patient') || (role === 'patient' && location.pathname === '/community');
+  const isPatientRoute = location.pathname.startsWith('/patient') && location.pathname !== '/patient/community';
+  const isCaregiverRoute = location.pathname.startsWith('/caregiver');
+  const isClinicianRoute = location.pathname.startsWith('/clinician');
+  const isCommunityRoute = location.pathname === '/community' || location.pathname === '/patient/community';
   const isGameActive = location.pathname.startsWith('/patient/games/') && location.pathname !== '/patient/games';
-  const isPublicPage = location.pathname === '/' || location.pathname === '/role-select' || location.pathname === '/login' || location.pathname === '/reset-password';
+  const isDedicatedAuthView = location.pathname === '/role-select' || location.pathname === '/login';
+  const isPublicPage = (location.pathname === '/' || location.pathname === '/about' || location.pathname === '/contact' || location.pathname === '/reset-password');
   const isAssistantRoute = location.pathname === '/assistant';
+  const isCustomLayout = isDedicatedAuthView || isCaregiverRoute || isClinicianRoute || isAssistantRoute || isCommunityRoute;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground font-sans pb-24 md:pb-28 transition-colors duration-200 relative">
+    <div className={`min-h-screen flex flex-col bg-background text-foreground font-sans ${isCustomLayout ? 'pb-0' : 'pb-24 md:pb-28 lg:pb-8'} transition-colors duration-200 relative`}>
       {/* Ambient Cinematic Background for Public/Auth routes */}
       {isPublicPage && <CinematicAuthBackground />}
 
-      {/* Universal Header (Persistent across whole app) */}
-      <Header onOpenEmergency={() => setIsEmergencyOpen(true)} />
+      <div className="flex flex-1 w-full min-h-screen">
+        {/* Desktop Sidebar (visible on large screens for patient route) */}
+        {isPatientRoute && !isGameActive && !isCommunityRoute && <Sidebar />}
 
-      {/* Main Content View */}
-      <main className="flex-1 w-full">
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Universal Header (Persistent across whole app except dedicated auth, caregiver, clinician, assistant, and community views) */}
+          {!isDedicatedAuthView && !isCaregiverRoute && !isClinicianRoute && !isAssistantRoute && !isCommunityRoute && <Header onOpenEmergency={() => setIsEmergencyOpen(true)} />}
+
+          {/* Main Content View */}
+          <main className="flex-1 w-full">
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<LandingPage defaultSection="about" />} />
+          <Route path="/contact" element={<LandingPage defaultSection="contact" />} />
           <Route path="/role-select" element={<RoleSelectPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
@@ -100,21 +134,21 @@ export default function App() {
           <Route
             path="/profile"
             element={
-              <RequireAuth currentUser={currentUser}>
+              <RequireAuth currentUser={currentUser} isLoading={isLoading}>
                 <ProfilePage />
               </RequireAuth>
             }
           />
 
           {/* Patient Routes */}
-          <Route path="/patient/home" element={<RequireAuth currentUser={currentUser}><PatientHome /></RequireAuth>} />
-          <Route path="/patient/games" element={<RequireAuth currentUser={currentUser}><PatientGamesList /></RequireAuth>} />
-          <Route path="/patient/games/bihu" element={<RequireAuth currentUser={currentUser}><BihuMemoryGame /></RequireAuth>} />
-          <Route path="/patient/games/mekhela" element={<RequireAuth currentUser={currentUser}><MekhelaPatternGame /></RequireAuth>} />
-          <Route path="/patient/games/teagarden" element={<RequireAuth currentUser={currentUser}><TeaGardenRoutineGame /></RequireAuth>} />
-          <Route path="/patient/games/soundshills" element={<RequireAuth currentUser={currentUser}><SoundsOfHillsGame /></RequireAuth>} />
-          <Route path="/patient/reminders" element={<RequireAuth currentUser={currentUser}><PatientReminders /></RequireAuth>} />
-          <Route path="/patient/progress" element={<RequireAuth currentUser={currentUser}><PatientProgress /></RequireAuth>} />
+          <Route path="/patient/home" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientHome /></RequireAuth>} />
+          <Route path="/patient/games" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientGamesList /></RequireAuth>} />
+          <Route path="/patient/games/bihu" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><BihuMemoryGame /></RequireAuth>} />
+          <Route path="/patient/games/mekhela" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><MekhelaPatternGame /></RequireAuth>} />
+          <Route path="/patient/games/teagarden" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><TeaGardenRoutineGame /></RequireAuth>} />
+          <Route path="/patient/games/soundshills" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><SoundsOfHillsGame /></RequireAuth>} />
+          <Route path="/patient/reminders" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientReminders /></RequireAuth>} />
+          <Route path="/patient/progress" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientProgress /></RequireAuth>} />
 
           {/* Dedicated AI Assistant Hub */}
           <Route path="/assistant" element={<AiErrorBoundary><AssistantPage /></AiErrorBoundary>} />
@@ -127,7 +161,7 @@ export default function App() {
           <Route
             path="/caregiver/dashboard"
             element={
-              <RequireCaregiver currentUser={currentUser} role={role}>
+              <RequireCaregiver currentUser={currentUser} role={role} isLoading={isLoading}>
                  <CaregiverDashboard />
               </RequireCaregiver>
             }
@@ -137,7 +171,7 @@ export default function App() {
           <Route
             path="/clinician/dashboard"
             element={
-              <RequireClinician currentUser={currentUser} role={role}>
+              <RequireClinician currentUser={currentUser} role={role} isLoading={isLoading}>
                 <ClinicianDashboard />
               </RequireClinician>
             }
@@ -147,7 +181,7 @@ export default function App() {
           <Route
             path="/economy"
             element={
-              <RequireAuth currentUser={currentUser}>
+              <RequireAuth currentUser={currentUser} isLoading={isLoading}>
                 <EconomyHubPage />
               </RequireAuth>
             }
@@ -155,7 +189,7 @@ export default function App() {
           <Route
             path="/economy/:tab"
             element={
-              <RequireAuth currentUser={currentUser}>
+              <RequireAuth currentUser={currentUser} isLoading={isLoading}>
                 <EconomyHubPage />
               </RequireAuth>
             }
@@ -165,11 +199,15 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+    </div>
+  </div>
 
-      {/* Elder-Friendly Bottom Navigation (Visible in Patient Mode, hidden during active game screen) */}
-      {isPatientRoute && !isGameActive && (
-        <PatientNav onOpenEmergency={() => setIsEmergencyOpen(true)} />
-      )}
+  {/* Elder-Friendly Bottom Navigation (Visible in Patient Mode on mobile, hidden during active game screen) */}
+  {isPatientRoute && !isGameActive && (
+    <div className="lg:hidden">
+      <PatientNav onOpenEmergency={() => setIsEmergencyOpen(true)} />
+    </div>
+  )}
 
       {/* Universal Floating "Ask Smriti" Voice Trigger */}
       {!isPublicPage && !isAssistantRoute && (

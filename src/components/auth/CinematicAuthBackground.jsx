@@ -32,10 +32,10 @@ export default function CinematicAuthBackground() {
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 select-none">
-      {/* 1. Underlying Solid Dark Theme Base */}
+      {/* 1. Underlying Solid Theme Base */}
       <div
         className={`absolute inset-0 transition-colors duration-500 ${
-          isDark ? 'bg-[#01040a]' : 'bg-[#FAF8F5]'
+          isDark ? 'bg-[#06110F]' : 'bg-[#F7F5F0]'
         }`}
       />
 
@@ -44,9 +44,9 @@ export default function CinematicAuthBackground() {
 
       {/* 3. Subtle Contrast Balancing Veils for Accessibility & Text Clarity */}
       {isDark ? (
-        <div className="absolute inset-0 bg-[#01040a]/20 pointer-events-none" />
+        <div className="absolute inset-0 bg-[#06110F]/30 pointer-events-none" />
       ) : (
-        <div className="absolute inset-0 bg-[#FAF8F5]/80 backdrop-blur-[1px] pointer-events-none" />
+        <div className="absolute inset-0 bg-[#F7F5F0]/45 backdrop-blur-[0.5px] pointer-events-none" />
       )}
 
       {/* 4. Subtle Ambient Motion Toggle (Accessibility Control) */}

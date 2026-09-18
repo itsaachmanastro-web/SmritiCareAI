@@ -2,35 +2,41 @@ import React from 'react';
 
 // SmritiCare Brand Logo (Dual-brain split motif: Orange neural half + Teal digital half)
 export function SmritiLogo({ className = "w-10 h-10", showText = true, textClass = "text-xl font-bold" }) {
+  const svg = (
+    <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="50" cy="50" r="48" className="fill-slate-100 stroke-slate-200 dark:fill-[#1E293B] dark:stroke-[#334155] print:fill-slate-100 print:stroke-slate-200" strokeWidth="2" />
+      {/* Left half: Warm Orange Neural Circuit */}
+      <path d="M50 16 C34 16 22 28 22 44 C22 55 28 65 37 72 C41 75 45 80 47 84 H50 V16 Z" fill="#EA580C" />
+      {/* Circuit traces on left */}
+      <circle cx="34" cy="34" r="3.5" fill="#FFFFFF" />
+      <circle cx="30" cy="54" r="3.5" fill="#FFFFFF" />
+      <path d="M34 34 L44 42 L44 58 L30 54" stroke="#FED7AA" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Right half: Teal Digital / Empathetic leaf */}
+      <path d="M50 16 C66 16 78 28 78 44 C78 55 72 65 63 72 C59 75 55 80 53 84 H50 V16 Z" fill="#0D9488" />
+      {/* Digital nodes on right */}
+      <circle cx="66" cy="34" r="3.5" fill="#FFFFFF" />
+      <circle cx="70" cy="54" r="3.5" fill="#FFFFFF" />
+      <path d="M66 34 L56 42 L56 58 L70 54" stroke="#99F6E4" strokeWidth="2.5" strokeLinecap="round" />
+      {/* Center glowing spark */}
+      <circle cx="50" cy="48" r="4" fill="#FEF08A" />
+    </svg>
+  );
+
+  if (!showText) {
+    return svg;
+  }
+
   return (
     <div className="flex items-center gap-3 select-none">
-      <svg className={className} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="50" cy="50" r="48" className="fill-slate-100 stroke-slate-200 dark:fill-[#1E293B] dark:stroke-[#334155] print:fill-slate-100 print:stroke-slate-200" strokeWidth="2" />
-        {/* Left half: Warm Orange Neural Circuit */}
-        <path d="M50 16 C34 16 22 28 22 44 C22 55 28 65 37 72 C41 75 45 80 47 84 H50 V16 Z" fill="#EA580C" />
-        {/* Circuit traces on left */}
-        <circle cx="34" cy="34" r="3.5" fill="#FFFFFF" />
-        <circle cx="30" cy="54" r="3.5" fill="#FFFFFF" />
-        <path d="M34 34 L44 42 L44 58 L30 54" stroke="#FED7AA" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Right half: Teal Digital / Empathetic leaf */}
-        <path d="M50 16 C66 16 78 28 78 44 C78 55 72 65 63 72 C59 75 55 80 53 84 H50 V16 Z" fill="#0D9488" />
-        {/* Digital nodes on right */}
-        <circle cx="66" cy="34" r="3.5" fill="#FFFFFF" />
-        <circle cx="70" cy="54" r="3.5" fill="#FFFFFF" />
-        <path d="M66 34 L56 42 L56 58 L70 54" stroke="#99F6E4" strokeWidth="2.5" strokeLinecap="round" />
-        {/* Center glowing spark */}
-        <circle cx="50" cy="48" r="4" fill="#FEF08A" />
-      </svg>
-      {showText && (
-        <div className="flex flex-col text-left">
-          <span className={`font-display tracking-tight text-slate-900 dark:text-white print:text-slate-900 ${textClass}`}>
-            Smriti<span className="text-smriti-teal-600 dark:text-teal-400 print:text-teal-700">Care</span>
-          </span>
-          <span className="text-[11px] font-extrabold text-smriti-orange-600 dark:text-amber-400 print:text-orange-700 tracking-wider uppercase -mt-1">
-            AI for Brighter Minds
-          </span>
-        </div>
-      )}
+      {svg}
+      <div className="flex flex-col text-left">
+        <span className={`font-display tracking-tight text-slate-900 dark:text-white print:text-slate-900 ${textClass}`}>
+          Smriti<span className="text-smriti-teal-600 dark:text-teal-400 print:text-teal-700">Care</span>
+        </span>
+        <span className="text-[11px] font-extrabold text-smriti-orange-600 dark:text-amber-400 print:text-orange-700 tracking-wider uppercase -mt-1">
+          AI for Brighter Minds
+        </span>
+      </div>
     </div>
   );
 }

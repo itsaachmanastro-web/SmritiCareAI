@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- SMRITICARE: GLOBAL DEMENTIA COMMUNITY SCHEMA
--- Problem Statement: SIH26003 | Team AvishkarX
+-- Production Cognitive Care & Clinical Platform
 -- ==============================================================================
 -- Note: Private local patient medical data (cognitive scores, medications, PHC notes)
 -- is strictly isolated in the local Dexie.js database and NEVER stored in this cloud schema.

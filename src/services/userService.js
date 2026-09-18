@@ -1,5 +1,6 @@
 import { db } from '../db/dexie.js';
 import { queueSyncItem } from '../db/syncService.js';
+import { isSupabaseConfigured, supabase } from './supabaseClient.js';
 
 /**
  * Service to manage User Lifecycle, Scoped Queries, and Safe Cascade Deletions.
@@ -14,8 +15,7 @@ import { queueSyncItem } from '../db/syncService.js';
  * @returns {Promise<{ success: boolean, message?: string, error?: string, selfDeleted?: boolean }>}
  */
 export async function deleteUser(targetUserId, requestingUser, options = {}) {
-  const targetId = Number(targetUserId);
-  if (!targetId || isNaN(targetId)) {
+  if (!targetUserId) {
     return { success: false, error: 'Invalid target user ID provided.' };
   }
 
@@ -23,30 +23,47 @@ export async function deleteUser(targetUserId, requestingUser, options = {}) {
     return { success: false, error: 'Authentication required to delete a user.' };
   }
 
-  const reqId = Number(requestingUser.id);
-  const isSelf = reqId === targetId;
+  const numericTargetId = Number(targetUserId);
+  const isNumeric = !isNaN(numericTargetId) && numericTargetId > 0;
 
   try {
-    const targetUser = await db.users.get(targetId);
+    let targetUser = null;
+    if (isNumeric) {
+      targetUser = await db.users.get(numericTargetId);
+    }
+    if (!targetUser) {
+      targetUser = await db.users.get(targetUserId);
+    }
+    if (!targetUser && isNumeric) {
+      targetUser = await db.users.where('id').equals(numericTargetId).first();
+    }
+    if (!targetUser) {
+      targetUser = await db.users.where('id').equals(String(targetUserId)).first();
+    }
+
     if (!targetUser) {
       return { success: false, error: 'User account not found in database.' };
     }
+
+    const targetId = targetUser.id;
+    const reqId = requestingUser.id;
+    const isSelf = String(reqId) === String(targetId);
 
     // 1. Authorization checks
     const reqRole = requestingUser.role;
     const targetRole = targetUser.role;
 
     if (!isSelf) {
-      if (reqRole === 'healthcare') {
+      if (reqRole === 'healthcare' || reqRole === 'clinician') {
         // Clinicians can archive/delete patients and caregivers in their jurisdiction
         // Prevent deleting another healthcare worker unless explicit admin
-        if (targetRole === 'healthcare' && !requestingUser.isAdmin) {
+        if ((targetRole === 'healthcare' || targetRole === 'clinician') && !requestingUser.isAdmin) {
           return { success: false, error: 'Cannot delete another Healthcare Professional account.' };
         }
       } else if (reqRole === 'caregiver') {
         // Caregivers can only delete/archive patients they personally created or are linked to
-        const isAssigned = requestingUser.linkedPatientId === targetId ||
-                           targetUser.createdByCaregiverId === reqId;
+        const isAssigned = String(requestingUser.linkedPatientId) === String(targetId) ||
+                           String(targetUser.createdByCaregiverId) === String(reqId);
         if (!isAssigned || targetRole !== 'patient') {
           return { success: false, error: 'Caregivers may only remove patients assigned to them.' };
         }
@@ -128,6 +145,29 @@ export async function deleteUser(targetUserId, requestingUser, options = {}) {
         patientId: targetRole === 'patient' ? targetId : null
       });
     });
+
+    // Cloud update to Supabase if live
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        if (useSoftDelete) {
+          await supabase.from('users').update({
+            status: 'archived',
+            is_deleted: true,
+            deleted_at: now
+          }).eq('id', targetId);
+
+          await supabase.from('patient_profiles').update({
+            status: 'archived',
+            updated_at: now
+          }).eq('user_id', targetId);
+        } else {
+          await supabase.from('patient_profiles').delete().eq('user_id', targetId);
+          await supabase.from('users').delete().eq('id', targetId);
+        }
+      } catch (cloudErr) {
+        console.warn('Supabase cloud delete notice:', cloudErr);
+      }
+    }
 
     // 3. Handle self-deletion session cleanup
     if (isSelf) {
@@ -250,6 +290,265 @@ export async function getCohortForClinician({ search = '', filterStatus = 'all' 
     return cohort;
   } catch (err) {
     console.error('Error fetching clinician cohort:', err);
+    return [];
+  }
+}
+
+/**
+ * Lightweight SHA-256 password hasher using standard Web Crypto API.
+ */
+export async function hashPassword(plainText) {
+  if (!plainText) return '';
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(plainText);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  } catch {
+    return plainText;
+  }
+}
+
+/**
+ * Creates a real, authenticated user account on behalf of staff (clinician, healthcare, caregiver, or admin)
+ * WITHOUT hijacking or invalidating the requesting user's active session.
+ * 
+ * @param {object} params - { requestingUser, userData }
+ * @returns {Promise<{ success: boolean, user?: object, error?: string }>}
+ */
+export async function createUserByStaff({ requestingUser, userData = {} }) {
+  if (!requestingUser || !requestingUser.id) {
+    return { success: false, error: 'Authentication required to create a user account.' };
+  }
+
+  const reqRole = requestingUser.role;
+  const targetRole = userData.role || 'patient';
+
+  // Authorization checks
+  if (reqRole !== 'healthcare' && reqRole !== 'clinician' && reqRole !== 'caregiver' && !requestingUser.isAdmin) {
+    return { success: false, error: 'Unauthorized: Only clinical staff and caregivers can provision new accounts.' };
+  }
+
+  if (targetRole === 'healthcare' || targetRole === 'clinician') {
+    if (reqRole !== 'healthcare' && reqRole !== 'clinician' && !requestingUser.isAdmin) {
+      return { success: false, error: 'Only healthcare administrators and clinicians can create clinical accounts.' };
+    }
+  }
+
+  // Input validation
+  const name = userData.name?.trim();
+  if (!name || name.length < 2) {
+    return { success: false, error: 'Full name is required (minimum 2 characters).' };
+  }
+
+  const email = userData.email?.trim().toLowerCase();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || !emailRegex.test(email)) {
+    return { success: false, error: 'A valid email address is required.' };
+  }
+
+  const password = userData.password || '';
+  const confirmPassword = userData.confirmPassword || '';
+
+  if (password.length < 4) {
+    return { success: false, error: 'Password must be at least 4 characters long.' };
+  }
+
+  if (confirmPassword && password !== confirmPassword) {
+    return { success: false, error: 'Passwords do not match. Please verify and retype.' };
+  }
+
+  if (targetRole === 'patient') {
+    if (userData.pin && !/^\d{4}$/.test(String(userData.pin).trim())) {
+      return { success: false, error: 'Patient PIN must be exactly 4 numeric digits.' };
+    }
+  }
+
+  try {
+    // Check for duplicate email in Dexie
+    const existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
+    if (existingUser && existingUser.status !== 'archived') {
+      return {
+        success: false,
+        error: 'This email is already registered. Please use another email or open the existing account.'
+      };
+    }
+
+    const passwordHash = await hashPassword(password);
+    const now = new Date().toISOString();
+    const pin = userData.pin ? String(userData.pin).trim() : (targetRole === 'patient' ? '1234' : undefined);
+    const age = userData.age ? Number(userData.age) : (targetRole === 'patient' ? 72 : undefined);
+    const phone = userData.phone?.trim() || '';
+    const location = userData.location?.trim() || 'Assam, India';
+    const gender = userData.gender || 'female';
+    const language = userData.language || (targetRole === 'patient' ? 'as' : 'en');
+    const relation = userData.relation || (reqRole === 'caregiver' ? 'Family Member' : 'Patient');
+    const designation = userData.designation?.trim() || (targetRole === 'healthcare' ? 'PHC Medical Officer' : '');
+    const phcCenter = userData.phcCenter?.trim() || 'Titabar PHC, Jorhat';
+
+    let newUserId;
+    let newProfileId;
+
+    await db.transaction('rw', [db.users, db.patientProfiles, db.syncQueue], async () => {
+      // 1. Insert User Record
+      const userRecord = {
+        name,
+        email,
+        passwordHash,
+        role: targetRole,
+        pin,
+        phone,
+        age,
+        gender,
+        language,
+        location,
+        relation: targetRole === 'caregiver' ? relation : '',
+        designation,
+        isDemo: false,
+        isVerified: true,
+        status: 'active',
+        createdByUserId: requestingUser.id,
+        createdByRole: reqRole,
+        createdByCaregiverId: reqRole === 'caregiver' ? requestingUser.id : null,
+        lastLoginAt: null,
+        createdAt: now,
+        updatedAt: now
+      };
+
+      newUserId = await db.users.add(userRecord);
+
+      // 2. If Patient, Create Patient Profile Record
+      if (targetRole === 'patient') {
+        newProfileId = await db.patientProfiles.add({
+          userId: newUserId,
+          isDemo: false,
+          name,
+          age: age || 72,
+          gender,
+          location,
+          phcCenter,
+          primaryCaregiver: reqRole === 'caregiver' ? requestingUser.name : 'Unassigned',
+          relation,
+          createdAt: now,
+          updatedAt: now
+        });
+      }
+
+      // 3. Queue Sync Items for Cloud Sync
+      await queueSyncItem('users', newUserId, 'INSERT', {
+        id: newUserId,
+        name,
+        email,
+        role: targetRole,
+        age,
+        location,
+        designation,
+        isDemo: false
+      }, {
+        userId: requestingUser.id,
+        patientId: targetRole === 'patient' ? newUserId : null
+      });
+
+      if (targetRole === 'patient' && newProfileId) {
+        await queueSyncItem('patientProfiles', newProfileId, 'INSERT', {
+          id: newProfileId,
+          userId: newUserId,
+          name,
+          age,
+          location,
+          phcCenter
+        }, {
+          userId: requestingUser.id,
+          patientId: newUserId
+        });
+      }
+
+      // 4. If Caregiver created patient, auto-link to caregiver
+      if (reqRole === 'caregiver' && requestingUser.id) {
+        await db.users.update(requestingUser.id, {
+          linkedPatientId: newUserId,
+          updatedAt: now
+        });
+      }
+    });
+
+    // Cloud synchronization to Supabase if connected
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.from('users').upsert({
+          id: String(newUserId),
+          name,
+          email,
+          role: targetRole,
+          is_demo: false,
+          created_at: now,
+          updated_at: now
+        });
+
+        if (targetRole === 'patient' && newProfileId) {
+          await supabase.from('patient_profiles').upsert({
+            id: String(newProfileId),
+            user_id: String(newUserId),
+            name,
+            age,
+            location,
+            phc_center: phcCenter,
+            created_at: now,
+            updated_at: now
+          });
+        }
+      } catch (cloudErr) {
+        console.warn('Supabase cloud user creation notice (offline-queued):', cloudErr);
+      }
+    }
+
+    const createdUser = await db.users.get(newUserId);
+    console.log(`✅ User created by staff (${reqRole} #${requestingUser.id}): ${name} (#${newUserId}) [role=${targetRole}]`);
+
+    return {
+      success: true,
+      user: createdUser,
+      message: `Account for "${name}" created successfully.`
+    };
+  } catch (err) {
+    console.error('❌ Failed to create user by staff:', err);
+    return {
+      success: false,
+      error: err.message || 'An unexpected error occurred while creating the account.'
+    };
+  }
+}
+
+/**
+ * Retrieves the Clinical & Healthcare Team directory.
+ * 
+ * @param {object} options - { search: string }
+ * @returns {Promise<Array>} List of active healthcare professionals
+ */
+export async function getClinicalTeam({ search = '' } = {}) {
+  try {
+    const clinicians = await db.users
+      .where('role')
+      .anyOf(['healthcare', 'clinician'])
+      .toArray();
+
+    let activeTeam = clinicians.filter(c => c.status !== 'archived' && !c.isDeleted);
+
+    if (search && search.trim()) {
+      const q = search.trim().toLowerCase();
+      activeTeam = activeTeam.filter(c => {
+        const matchName = c.name && c.name.toLowerCase().includes(q);
+        const matchEmail = c.email && c.email.toLowerCase().includes(q);
+        const matchDesig = c.designation && c.designation.toLowerCase().includes(q);
+        const matchLoc = c.location && c.location.toLowerCase().includes(q);
+        return matchName || matchEmail || matchDesig || matchLoc;
+      });
+    }
+
+    return activeTeam;
+  } catch (err) {
+    console.error('Error fetching clinical team:', err);
     return [];
   }
 }

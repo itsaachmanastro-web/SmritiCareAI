@@ -23,6 +23,7 @@ import LanguageSelector from './LanguageSelector';
 import ChatWindow from './ChatWindow';
 import ApiKeyModal from './ApiKeyModal';
 import AiErrorBoundary from './AiErrorBoundary';
+import SmritiCompanionAvatar from '../common/SmritiCompanionAvatar';
 import { useVoiceAssistant } from '../../hooks/useVoiceAssistant';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
@@ -168,12 +169,12 @@ export default function AiAssistantDrawer({
         <button
           type="button"
           onClick={() => setIsMinimized(false)}
-          className="flex items-center gap-3 px-5 py-3 rounded-full bg-gradient-to-r from-smriti-teal-600 to-teal-700 text-white font-black text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all border-2 border-white/20 cursor-pointer"
+          className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#143D30] dark:bg-[#0E2320] text-white font-bold text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all border border-[#1B5E40]/50 dark:border-[#2DD4BF]/20 cursor-pointer"
           aria-label="Expand AI Assistant"
         >
-          <span className="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span className="text-xl">🌸</span>
-          <span>{t('menu.drawerTitle') || 'SmritiCare AI Assistant'}</span>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#22C55E] animate-pulse"></span>
+          <SmritiCompanionAvatar className="w-6 h-6" />
+          <span>{t('assistant.smriti') || 'Smriti'} &bull; {t('menu.drawerTitle') || 'Care Companion'}</span>
           <Maximize2 className="w-4 h-4 ml-1 opacity-80" />
         </button>
       </div>
@@ -197,21 +198,24 @@ export default function AiAssistantDrawer({
         ref={drawerRef}
         className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10"
       >
-        <div className="w-screen sm:max-w-lg bg-white dark:bg-[#131D33] border-l border-slate-200 dark:border-[#243352] shadow-2xl flex flex-col h-full text-slate-900 dark:text-white transition-colors duration-200 animate-in slide-in-from-right duration-300 ease-out">
+        <div className="w-screen sm:max-w-lg bg-[#F7F5F0] dark:bg-[#06110F] border-l border-[#DFEAE2] dark:border-[#183830] shadow-2xl flex flex-col h-full text-[#142823] dark:text-[#F0F6F4] transition-colors duration-200 animate-in slide-in-from-right duration-300 ease-out">
           {/* Drawer Header */}
-          <div className="px-5 py-4 border-b border-slate-200/90 dark:border-[#243352] flex items-center justify-between gap-3 bg-slate-50/80 dark:bg-[#10192D] shrink-0">
+          <div className="px-5 py-4 border-b border-[#DFEAE2] dark:border-[#183830] flex items-center justify-between gap-3 bg-[#FAFDF9] dark:bg-[#0B1C18] shrink-0">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-smriti-teal-600 to-teal-800 text-white flex items-center justify-center text-2xl shadow-md shrink-0">
-                🌸
+              <div className="w-10 h-10 rounded-2xl bg-[#DCF0E4] dark:bg-[#0D2318] border border-[#BAD9C6] dark:border-[#153A28] flex items-center justify-center shadow-xs shrink-0">
+                <SmritiCompanionAvatar className="w-7 h-7" isListening={state === ASSISTANT_STATES.LISTENING} isSpeaking={isSpeaking} />
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white truncate">
-                    {t('menu.drawerTitle') || 'SmritiCare AI Assistant'}
+                  <h2 className="text-base font-serif font-bold text-[#142823] dark:text-[#F0F6F4] truncate">
+                    {t('assistant.smriti') || 'Smriti'}
                   </h2>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#DCF0E4] dark:bg-[#12332A] text-[#143D30] dark:text-[#34D399] font-bold">
+                    Care Companion
+                  </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-bold">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <div className="flex items-center gap-1.5 text-xs text-[#0D9488] dark:text-[#2DD4BF] font-semibold mt-0.5">
+                  <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
                   <span>
                     {state === ASSISTANT_STATES.LISTENING
                       ? (t('assistant.listening') || 'Listening...')
@@ -219,7 +223,7 @@ export default function AiAssistantDrawer({
                       ? (t('assistant.thinking') || 'Thinking...')
                       : state === ASSISTANT_STATES.SPEAKING
                       ? (t('assistant.speaking') || 'Speaking...')
-                      : (t('menu.readyToHelp') || 'Ready to help')}
+                      : (t('assistant.statusReady') || 'Ready to help')}
                   </span>
                 </div>
               </div>
@@ -231,10 +235,10 @@ export default function AiAssistantDrawer({
               <button
                 type="button"
                 onClick={state === ASSISTANT_STATES.LISTENING ? stopVoiceInput : startVoiceInput}
-                className={`p-2 rounded-xl transition-all ${
+                className={`p-2 rounded-xl transition-all cursor-pointer ${
                   state === ASSISTANT_STATES.LISTENING
                     ? 'bg-rose-500 text-white animate-pulse'
-                    : 'text-slate-500 dark:text-slate-300 hover:text-smriti-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40'
+                    : 'text-[#5C756D] dark:text-[#7E9C94] hover:text-[#143D30] hover:bg-[#EFF6F1] dark:hover:bg-[#102520]'
                 }`}
                 title={state === ASSISTANT_STATES.LISTENING ? 'Stop listening' : 'Start voice input'}
                 aria-label="Voice input toggle"
@@ -252,7 +256,7 @@ export default function AiAssistantDrawer({
               <button
                 type="button"
                 onClick={() => setIsKeyModalOpen(true)}
-                className="p-2 rounded-xl text-slate-400 hover:text-teal-600 hover:bg-teal-50 dark:hover:bg-teal-950/40 transition-colors"
+                className="p-2 rounded-xl text-[#5C756D] hover:text-[#143D30] dark:text-[#7E9C94] dark:hover:text-white hover:bg-[#EFF6F1] dark:hover:bg-[#102520] transition-colors cursor-pointer"
                 title={t('menu.aiSettings') || 'AI Engine Settings'}
                 aria-label="AI Engine Settings"
               >
@@ -264,7 +268,7 @@ export default function AiAssistantDrawer({
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+                  className="p-2 rounded-xl text-[#5C756D] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
                   title="Clear conversation"
                   aria-label="Clear chat history"
                 >
@@ -276,7 +280,7 @@ export default function AiAssistantDrawer({
               <button
                 type="button"
                 onClick={() => setIsMinimized(true)}
-                className="hidden sm:inline-flex p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-[#1E293B] transition-colors"
+                className="hidden sm:inline-flex p-2 rounded-xl text-[#5C756D] hover:text-[#142823] dark:text-[#7E9C94] dark:hover:text-white hover:bg-[#EFF6F1] dark:hover:bg-[#102520] transition-colors cursor-pointer"
                 title={t('menu.minimize') || 'Minimize to corner'}
                 aria-label="Minimize assistant drawer"
               >
@@ -287,7 +291,7 @@ export default function AiAssistantDrawer({
               <button
                 type="button"
                 onClick={onClose}
-                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-[#1E293B] transition-colors"
+                className="p-2 rounded-xl text-[#5C756D] hover:text-[#142823] dark:text-[#7E9C94] dark:hover:text-white hover:bg-[#EFF6F1] dark:hover:bg-[#102520] transition-colors cursor-pointer"
                 title={t('menu.close') || 'Close'}
                 aria-label="Close assistant drawer"
               >
@@ -301,15 +305,15 @@ export default function AiAssistantDrawer({
             {isLoadingReady ? (
               // Loading Skeleton
               <div className="flex-1 p-6 space-y-6 flex flex-col justify-center items-center text-center">
-                <div className="w-16 h-16 rounded-3xl bg-teal-50 dark:bg-teal-950/60 flex items-center justify-center text-3xl animate-bounce">
-                  🌸
+                <div className="w-16 h-16 rounded-3xl bg-[#DCF0E4] dark:bg-[#0D2318] border border-[#BAD9C6] dark:border-[#153A28] flex items-center justify-center shadow-md animate-bounce">
+                  <SmritiCompanionAvatar className="w-10 h-10" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="text-lg font-black text-slate-800 dark:text-slate-100">
+                  <h3 className="text-lg font-bold text-[#142823] dark:text-[#F0F6F4]">
                     {t('menu.gettingReady') || 'Smriti is getting ready...'}
                   </h3>
-                  <div className="w-48 h-2 bg-slate-200 dark:bg-slate-700 rounded-full mx-auto overflow-hidden">
-                    <div className="w-full h-full bg-smriti-teal-500 animate-pulse"></div>
+                  <div className="w-48 h-2 bg-[#DFEAE2] dark:bg-[#183830] rounded-full mx-auto overflow-hidden">
+                    <div className="w-full h-full bg-[#143D30] dark:bg-[#2DD4BF] animate-pulse"></div>
                   </div>
                 </div>
 
@@ -321,7 +325,7 @@ export default function AiAssistantDrawer({
                     <button
                       type="button"
                       onClick={() => setIsLoadingReady(false)}
-                      className="px-4 py-1.5 text-xs font-bold rounded-xl bg-amber-600 text-white shadow-xs hover:bg-amber-700"
+                      className="px-4 py-1.5 text-xs font-bold rounded-xl bg-amber-600 text-white shadow-xs hover:bg-amber-700 cursor-pointer"
                     >
                       {t('menu.tryAgain') || 'Continue Anyway'}
                     </button>
@@ -333,7 +337,7 @@ export default function AiAssistantDrawer({
               <div className="flex-1 flex flex-col overflow-hidden px-4 py-3 space-y-3">
                 {/* Active Context Banner if inside a Game */}
                 {currentGameName && (
-                  <div className="px-3 py-2 bg-teal-50 dark:bg-teal-950/60 border border-teal-200 dark:border-teal-800 rounded-2xl flex items-center justify-between text-xs font-bold text-smriti-teal-800 dark:text-teal-300 shrink-0">
+                  <div className="px-3 py-2 bg-[#E8F3ED] dark:bg-[#102923] border border-[#BAD9C6] dark:border-[#183830] rounded-2xl flex items-center justify-between text-xs font-bold text-[#143D30] dark:text-[#34D399] shrink-0">
                     <span>🎮 Active Game Context: {currentGameName}</span>
                     {currentScore !== undefined && <span>Score: {currentScore}%</span>}
                   </div>
@@ -370,7 +374,7 @@ export default function AiAssistantDrawer({
 
                 {/* Quick Action Navigation Pills */}
                 <div className="shrink-0 space-y-1.5 pt-1">
-                  <div className="text-[11px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 flex items-center gap-1">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-[#5C756D] dark:text-[#7E9C94] px-1 flex items-center gap-1">
                     <Sparkles className="w-3 h-3 text-amber-500" />
                     <span>{t('menu.quickActions') || 'Quick Actions'}</span>
                   </div>
@@ -378,25 +382,25 @@ export default function AiAssistantDrawer({
                     <button
                       type="button"
                       onClick={() => handleQuickAction('understand_app')}
-                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-teal-50/80 hover:bg-teal-100/80 dark:bg-teal-950/40 dark:hover:bg-teal-900/60 border border-teal-200/80 dark:border-teal-800/80 text-left text-xs font-bold text-smriti-teal-900 dark:text-teal-200 transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-white dark:bg-[#0E221E] hover:bg-[#E8F3ED] dark:hover:bg-[#122E26] border border-[#DFEAE2] dark:border-[#183830] text-left text-xs font-bold text-[#142823] dark:text-[#E2EAE5] transition-all cursor-pointer shadow-xs"
                     >
-                      <HelpCircle className="w-4 h-4 text-smriti-teal-600 dark:text-teal-400 shrink-0" />
+                      <HelpCircle className="w-4 h-4 text-[#0D9488] dark:text-[#2DD4BF] shrink-0" />
                       <span className="truncate">{t('menu.understandApp') || 'Help me understand app'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleQuickAction('memory_game')}
-                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-amber-50/80 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 border border-amber-200/80 dark:border-amber-800/80 text-left text-xs font-bold text-amber-900 dark:text-amber-200 transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-white dark:bg-[#0E221E] hover:bg-amber-50 dark:hover:bg-amber-950/30 border border-[#DFEAE2] dark:border-[#183830] text-left text-xs font-bold text-[#142823] dark:text-[#E2EAE5] transition-all cursor-pointer shadow-xs"
                     >
-                      <Gamepad2 className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <Gamepad2 className="w-4 h-4 text-amber-500 shrink-0" />
                       <span className="truncate">{t('menu.startMemoryGame') || 'Start memory game'}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => handleQuickAction('reminders')}
-                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-blue-50/80 hover:bg-blue-100/80 dark:bg-blue-950/40 dark:hover:bg-blue-900/60 border border-blue-200/80 dark:border-blue-800/80 text-left text-xs font-bold text-blue-900 dark:text-blue-200 transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-white dark:bg-[#0E221E] hover:bg-blue-50 dark:hover:bg-blue-950/30 border border-[#DFEAE2] dark:border-[#183830] text-left text-xs font-bold text-[#142823] dark:text-[#E2EAE5] transition-all cursor-pointer shadow-xs"
                     >
                       <Bell className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
                       <span className="truncate">{t('menu.todayReminders') || "Today's reminders"}</span>
@@ -405,9 +409,9 @@ export default function AiAssistantDrawer({
                     <button
                       type="button"
                       onClick={() => handleQuickAction('progress')}
-                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-emerald-50/80 hover:bg-emerald-100/80 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200/80 dark:border-emerald-800/80 text-left text-xs font-bold text-emerald-900 dark:text-emerald-200 transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-2.5 rounded-2xl bg-white dark:bg-[#0E221E] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border border-[#DFEAE2] dark:border-[#183830] text-left text-xs font-bold text-[#142823] dark:text-[#E2EAE5] transition-all cursor-pointer shadow-xs"
                     >
-                      <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <TrendingUp className="w-4 h-4 text-[#22C55E] dark:text-[#4ADE80] shrink-0" />
                       <span className="truncate">{t('menu.showProgress') || 'Show my progress'}</span>
                     </button>
                   </div>
@@ -416,19 +420,19 @@ export default function AiAssistantDrawer({
                 {/* Text Input Footer Bar */}
                 <form
                   onSubmit={handleSendText}
-                  className="pt-2 border-t border-slate-100 dark:border-[#243352] flex items-center gap-2 shrink-0"
+                  className="pt-2 border-t border-[#DFEAE2] dark:border-[#183830] flex items-center gap-2 shrink-0"
                 >
                   <input
                     type="text"
                     value={typedInput}
                     onChange={(e) => setTypedInput(e.target.value)}
                     placeholder={t('menu.askPrompt') || 'Ask Smriti anything...'}
-                    className="flex-1 px-4 py-3 rounded-2xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm font-semibold focus:outline-none focus:border-smriti-teal-500 transition-colors"
+                    className="flex-1 px-4 py-3 rounded-full border border-[#DFEAE2] dark:border-[#183830] bg-white dark:bg-[#0E221E] text-[#142823] dark:text-[#F0F6F4] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#143D30] dark:focus:ring-[#2DD4BF] transition-all shadow-inner"
                   />
                   <button
                     type="submit"
                     disabled={!typedInput.trim()}
-                    className="p-3 rounded-2xl bg-smriti-teal-600 hover:bg-smriti-teal-700 text-white font-bold transition-all disabled:opacity-40 cursor-pointer shadow-md shrink-0 active:scale-95"
+                    className="p-3 rounded-full bg-[#143D30] hover:bg-[#0E2D23] dark:bg-[#2DD4BF] dark:hover:bg-[#20B8A5] text-white dark:text-[#06110F] font-bold transition-all disabled:opacity-40 cursor-pointer shadow-md shrink-0 active:scale-95"
                     aria-label="Send query"
                   >
                     <Send className="w-5 h-5" />

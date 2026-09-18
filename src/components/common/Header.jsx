@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Menu, Globe, Wifi, WifiOff, RefreshCw, LogOut, Database, User, Users, Sun, Moon, Settings, ChevronDown, LogIn, Coins, Award } from 'lucide-react';
+import { Menu, Globe, Wifi, WifiOff, RefreshCw, LogOut, Database, User, Users, Sun, Moon, Settings, ChevronDown, LogIn, Coins, Award, Search, Calendar, Check } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useLanguage } from '../../context/LanguageContext';
+import { useLanguage, SUPPORTED_LANGUAGES } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useAssistant } from '../../context/AssistantContext';
 import { SmritiLogo } from './NerIcons';
 import UserAvatar from './UserAvatar';
 import NavigationDrawer from './NavigationDrawer';
 import NotificationBell from '../notifications/NotificationBell';
+import UserMenu from './UserMenu';
 import { syncNow, getSyncStats } from '../../db/syncService';
 
 export default function Header({ onOpenEmergency = null }) {
@@ -23,14 +24,27 @@ export default function Header({ onOpenEmergency = null }) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState(null);
   const [showSyncModal, setShowSyncModal] = useState(false);
-  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showLangMenu, setShowLangMenu] = useState(false);
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState({ totalRecords: 0, unsyncedCount: 0, lastSync: 'Never' });
+  const langMenuRef = React.useRef(null);
 
-  // Close menu on navigation
+  // Close menus on navigation
   useEffect(() => {
-    setShowUserMenu(false);
+    setShowLangMenu(false);
   }, [location.pathname]);
+
+  // Click outside for language dropdown
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (langMenuRef.current && !langMenuRef.current.contains(e.target)) {
+        setShowLangMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => {
@@ -80,33 +94,41 @@ export default function Header({ onOpenEmergency = null }) {
     navigate('/');
   };
 
-  const languages = [
-    { code: 'en', label: 'English', native: 'English' },
-    { code: 'hi', label: 'Hindi', native: 'हिन्दी' },
-    { code: 'as', label: 'Assamese', native: 'অসমীয়া' },
-    { code: 'bn', label: 'Bengali', native: 'বাংলা' }
-  ];
+  const languages = SUPPORTED_LANGUAGES;
 
   const isCommunityActive = location.pathname.startsWith('/community') || location.pathname.startsWith('/patient/community');
 
+  const formattedDate = new Intl.DateTimeFormat('en-GB', { 
+    weekday: 'short', 
+    day: 'numeric', 
+    month: 'short', 
+    year: 'numeric' 
+  }).format(new Date());
+
+  const currentHour = new Date().getHours();
+  const greetingText = currentHour < 12 ? 'Good Morning,' : currentHour < 17 ? 'Good Afternoon,' : 'Good Evening,';
+  const firstName = currentUser?.name ? currentUser.name.split(' ')[0] : 'there';
+  const currentLangObj = languages.find((l) => l.code === language) || languages[0];
+
+  const isLanding = location.pathname === '/' || location.pathname === '/about' || location.pathname === '/contact';
+
   return (
-    <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0E172A]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-[#243352] shadow-sm px-4 md:px-8 py-3 transition-colors duration-200">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
-        {/* Left: 3-Line Hamburger, Logo & Primary Actions */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5">
-          {/* 3-Line Hamburger Menu Trigger */}
+    <header className="sticky top-0 z-40 bg-[#F7F5F0]/95 dark:bg-[#06110F]/95 backdrop-blur-md border-b border-[#DFEAE2] dark:border-[#183830] shadow-xs px-4 md:px-6 py-2.5 transition-colors duration-200">
+      <div className="w-full flex items-center justify-between gap-3">
+        {/* Left: Mobile hamburger menu trigger, logo, and Landing Nav or Search Bar */}
+        <div className="flex items-center gap-3 md:gap-4 flex-1">
+          {/* Hamburger Menu Trigger (visible on mobile / tablet) */}
           <button
             type="button"
             onClick={() => setIsNavDrawerOpen(true)}
-            className="p-2 sm:p-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#162238] dark:hover:bg-[#1E293B] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-[#243352] transition-all flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-smriti-teal-500 cursor-pointer shadow-xs active:scale-95"
+            className="lg:hidden p-2 rounded-xl bg-white dark:bg-[#0E221E] hover:bg-[#EFF6F1] dark:hover:bg-[#132A24] text-[#142823] dark:text-[#F0F6F4] border border-[#DFEAE2] dark:border-[#183830] transition-all flex items-center focus:outline-none focus:ring-2 focus:ring-[#143D30] cursor-pointer shadow-xs"
             aria-label={t('menu.title') || 'Open Navigation Menu'}
             aria-expanded={isNavDrawerOpen}
-            title={t('menu.title') || 'Menu'}
           >
-            <Menu className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-            <span className="text-xs font-black hidden lg:inline">{t('menu.title') || 'Menu'}</span>
+            <Menu className="w-5 h-5" />
           </button>
 
+          {/* Logo visible: always on landing page, and on smaller screens when sidebar is hidden */}
           <Link
             to={
               role === 'patient'
@@ -117,178 +139,222 @@ export default function Header({ onOpenEmergency = null }) {
                 ? '/caregiver/dashboard'
                 : '/'
             }
-            className="hover:opacity-90 transition-opacity flex items-center"
+            className={`${isLanding ? 'flex' : 'lg:hidden flex'} hover:opacity-90 transition-opacity items-center gap-2.5 shrink-0`}
           >
-            <SmritiLogo className="w-10 h-10 md:w-11 md:h-11" textClass="text-xl md:text-2xl font-extrabold text-slate-900 dark:text-white" />
+            <div className="w-8 h-8 rounded-xl bg-[#DCF0E4] dark:bg-[#0D2318] flex items-center justify-center p-1 border border-[#BAD9C6] dark:border-[#153A28] shadow-xs">
+              <SmritiLogo className="w-full h-full text-[#143D30] dark:text-[#2DD4BF]" showText={false} />
+            </div>
+            <div className="flex flex-col leading-none">
+              <span className="font-serif font-bold text-base tracking-tight text-[#142823] dark:text-[#F0F6F4]">SmritiCare</span>
+              <span className="text-[9px] text-[#5C756D] dark:text-[#7E9C94] tracking-tight mt-0.5">Care Connects Generations</span>
+            </div>
           </Link>
+
+          {/* Landing Page Center Navigation Links (Matching Reference Image) */}
+          {isLanding ? (
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-2 ml-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (location.pathname === '/') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  } else {
+                    navigate('/');
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-full text-xs font-bold text-[#143D30] dark:text-[#2DD4BF] border-b-2 border-[#143D30] dark:border-[#2DD4BF] transition-all cursor-pointer"
+              >
+                Home
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (location.pathname === '/') {
+                    document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    navigate('/#about');
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#5C756D] hover:text-[#143D30] dark:text-[#7E9C94] dark:hover:text-[#F0F6F4] transition-colors cursor-pointer"
+              >
+                About
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (location.pathname === '/') {
+                    document.getElementById('pillars')?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    navigate('/#pillars');
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#5C756D] hover:text-[#143D30] dark:text-[#7E9C94] dark:hover:text-[#F0F6F4] transition-colors cursor-pointer"
+              >
+                Our Approach
+              </button>
+              <Link
+                to="/login?role=caregiver"
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#5C756D] hover:text-[#143D30] dark:text-[#7E9C94] dark:hover:text-[#F0F6F4] transition-colors"
+              >
+                For Families
+              </Link>
+              <Link
+                to="/login?role=healthcare"
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#5C756D] hover:text-[#143D30] dark:text-[#7E9C94] dark:hover:text-[#F0F6F4] transition-colors"
+              >
+                For Professionals
+              </Link>
+              <Link
+                to="/economy"
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#5C756D] hover:text-[#143D30] dark:text-[#7E9C94] dark:hover:text-[#F0F6F4] transition-colors"
+              >
+                Resources
+              </Link>
+              <button
+                type="button"
+                onClick={() => {
+                  if (location.pathname === '/') {
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  } else {
+                    navigate('/#contact');
+                  }
+                }}
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#5C756D] hover:text-[#143D30] dark:text-[#7E9C94] dark:hover:text-[#F0F6F4] transition-colors cursor-pointer"
+              >
+                Contact
+              </button>
+            </nav>
+          ) : (
+            /* Search Pill Input matching Reference Image (on non-landing views) */
+            <div className="relative w-full max-w-md hidden sm:flex items-center">
+              <Search className="w-4 h-4 text-[#5C756D] dark:text-[#7E9C94] absolute left-3.5 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search games, activities, or get help..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && searchQuery.trim()) {
+                    navigate(`/patient/games?q=${encodeURIComponent(searchQuery.trim())}`);
+                  }
+                }}
+                className="w-full pl-9 pr-4 py-2 rounded-full text-xs md:text-sm bg-white/80 dark:bg-[#0E221E]/90 text-[#142823] dark:text-[#F0F6F4] border border-[#DFEAE2] dark:border-[#183830] focus:outline-none focus:ring-2 focus:ring-[#143D30] dark:focus:ring-[#2DD4BF] placeholder:text-[#5C756D]/70 dark:placeholder:text-[#7E9C94]/70 transition-all shadow-xs"
+              />
+            </div>
+          )}
         </div>
 
         {/* Right Controls */}
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* Online/Offline Status Pill */}
-          <button
-            onClick={() => { loadStats(); setShowSyncModal(true); }}
-            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold border transition-all ${
-              isOnline
-                ? 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
-                : 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
-            }`}
-            title="Click to view offline database status"
-          >
-            {isOnline ? (
-              <>
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span className="hidden sm:inline">🟢 {t('synced')}</span>
-                <span className="sm:hidden">🟢</span>
-              </>
-            ) : (
-              <>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                <span className="hidden sm:inline">🟠 {t('offline')}</span>
-                <span className="sm:hidden">🟠</span>
-              </>
-            )}
-            <Database className="w-3.5 h-3.5 opacity-60 ml-0.5" />
-          </button>
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Online/Offline Status Pill (hidden on landing page for pure aesthetic) */}
+          {!isLanding && (
+            <button
+              onClick={() => { loadStats(); setShowSyncModal(true); }}
+              className={`hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition-all cursor-pointer ${
+                isOnline
+                  ? 'bg-[#E8F3ED] hover:bg-[#DCEDE3] dark:bg-[#0D2620] dark:hover:bg-[#12332B] text-[#143D30] dark:text-[#34D399] border-[#C8DFCE] dark:border-[#183830]'
+                  : 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/50 dark:hover:bg-amber-900/50 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800'
+              }`}
+              title="Click to view offline database status"
+            >
+              {isOnline ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse"></span>
+                  <span className="text-[11px]">{t('synced')}</span>
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                  <span className="text-[11px]">{t('offline')}</span>
+                </>
+              )}
+              <Database className="w-3 h-3 opacity-60" />
+            </button>
+          )}
 
-          {/* Centralized Notification Bell with Live Unread Badge */}
-          <NotificationBell />
+          {/* Centralized Notification Bell (on dashboard views) */}
+          {!isLanding && <NotificationBell />}
 
-          {/* Theme Toggle Button */}
+          {/* Theme Toggle Pill (Dual state capsule matching Reference) */}
           <button
+            type="button"
             onClick={toggleTheme}
-            className="inline-flex items-center justify-center w-9 h-9 md:w-10 md:h-10 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-amber-300 border border-slate-300 dark:border-slate-700 transition-all shadow-xs active:scale-95"
-            title={isDark ? t('lightMode') : t('darkMode')}
+            className="relative flex items-center h-8 w-15 rounded-full p-1 bg-[#E8F1EC] dark:bg-[#102520] border border-[#DFEAE2] dark:border-[#183830] transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#143D30] dark:focus:ring-[#2DD4BF] shadow-xs"
+            title={isDark ? t('lightMode') || 'Switch to Light Mode' : t('darkMode') || 'Switch to Dark Mode'}
             aria-label={t('toggleTheme')}
           >
-            {isDark ? (
-              <Sun className="w-4 h-4 md:w-5 md:h-5 text-amber-400 animate-pulse" />
-            ) : (
-              <Moon className="w-4 h-4 md:w-5 md:h-5 text-slate-700" />
-            )}
+            <span
+              className={`absolute flex items-center justify-center w-6 h-6 rounded-full transition-transform duration-300 shadow-sm ${
+                isDark
+                  ? 'translate-x-7 bg-[#06110F] text-[#2DD4BF]'
+                  : 'translate-x-0 bg-white text-amber-500'
+              }`}
+            >
+              {isDark ? <Moon className="w-3.5 h-3.5 text-[#2DD4BF]" /> : <Sun className="w-3.5 h-3.5 text-amber-500" />}
+            </span>
+            <span className="flex items-center justify-between w-full px-1 text-[10px] text-[#5C756D] dark:text-[#7E9C94] pointer-events-none select-none">
+              <Sun className={`w-3.5 h-3.5 transition-opacity ${isDark ? 'opacity-40 text-slate-500' : 'opacity-0'}`} />
+              <Moon className={`w-3.5 h-3.5 transition-opacity ${isDark ? 'opacity-0' : 'opacity-40 text-slate-500'}`} />
+            </span>
           </button>
 
-          {/* Language Selector */}
-          <div className="relative inline-flex items-center">
-            <Globe className="w-4 h-4 text-slate-500 dark:text-slate-400 absolute left-2.5 pointer-events-none hidden sm:block" />
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs md:text-sm font-semibold rounded-xl pl-2 sm:pl-8 pr-2 py-1.5 border border-slate-300 dark:border-slate-700 cursor-pointer focus:ring-2 focus:ring-smriti-teal-500"
+          {/* Language Selector Dropdown (Pill button matching Reference) */}
+          <div className="relative inline-flex items-center" ref={langMenuRef}>
+            <button
+              type="button"
+              onClick={() => setShowLangMenu((prev) => !prev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-[#0E221E] hover:bg-[#EFF6F1] dark:hover:bg-[#132A24] text-[#142823] dark:text-[#F0F6F4] text-xs font-semibold border border-[#DFEAE2] dark:border-[#183830] transition-all shadow-xs cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#143D30] dark:focus:ring-[#2DD4BF]"
+              aria-label="Select Language"
+              aria-expanded={showLangMenu}
             >
-              {languages.map((l) => (
-                <option key={l.code} value={l.code}>
-                  {l.native}
-                </option>
-              ))}
-            </select>
+              <Globe className="w-3.5 h-3.5 text-[#0D9488] dark:text-[#2DD4BF]" />
+              <span className="hidden sm:inline">{currentLangObj.flag} {currentLangObj.label || currentLangObj.native}</span>
+              <span className="sm:hidden">{currentLangObj.flag}</span>
+              <ChevronDown className={`w-3 h-3 text-[#5C756D] dark:text-[#7E9C94] transition-transform duration-200 ${showLangMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showLangMenu && (
+              <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-[#0E221E] rounded-2xl shadow-xl border border-[#DFEAE2] dark:border-[#183830] py-1.5 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                {languages.map((l) => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => {
+                      setLanguage(l.code);
+                      setShowLangMenu(false);
+                    }}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs text-left transition-colors cursor-pointer ${
+                      language === l.code
+                        ? 'bg-[#E8F3ED] dark:bg-[#122E26] text-[#143D30] dark:text-[#4ADE80] font-bold'
+                        : 'text-[#5C756D] dark:text-[#94A3B8] hover:bg-[#F7F5F0] dark:hover:bg-[#132A24]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <span className="text-sm">{l.flag}</span>
+                      <span>{l.label || l.native}</span>
+                    </span>
+                    {language === l.code && <Check className="w-3.5 h-3.5 text-[#143D30] dark:text-[#4ADE80]" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* User Profile & Menu / Sign In */}
           {currentUser ? (
-            <div className="relative pl-2 border-l border-slate-300 dark:border-slate-700">
-              <button
-                onClick={() => setShowUserMenu((prev) => !prev)}
-                className="flex items-center gap-2 p-1 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-smriti-teal-500"
-                aria-expanded={showUserMenu}
-                aria-label="User Account Menu"
-              >
-                <div className="hidden md:flex flex-col text-right">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 leading-tight max-w-[130px] truncate">
-                    {currentUser.name}
-                  </span>
-                  <span className="text-[10px] uppercase font-extrabold text-smriti-teal-700 dark:text-smriti-teal-400 tracking-wider">
-                    {currentUser.role}
-                  </span>
-                </div>
-                <UserAvatar user={currentUser} size="sm" showStatus={isOnline} />
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
-              </button>
+            <div className="flex items-center pl-1">
+              <UserMenu variant="header" />
 
-              {/* User Dropdown Menu */}
-              {showUserMenu && (
-                <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowUserMenu(false)}
-                  />
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-[#1E293B] rounded-2xl shadow-xl border border-slate-200 dark:border-[#243352] py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    {/* User header info in menu */}
-                    <div className="px-4 py-3 border-b border-slate-100 dark:border-[#243352] flex items-center gap-3">
-                      <UserAvatar user={currentUser} size="md" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-extrabold text-slate-900 dark:text-white truncate">
-                          {currentUser.name}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {currentUser.email}
-                        </p>
-                        <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-black uppercase rounded-md bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-                          {currentUser.role}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Navigation Items */}
-                    <div className="py-1">
-                      <Link
-                        to="/profile"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-smriti-teal-600 dark:hover:text-teal-300 transition-colors"
-                      >
-                        <User className="w-4 h-4 text-smriti-teal-600 dark:text-teal-400" />
-                        <span>{t('navigation.profile')}</span>
-                      </Link>
-
-                      <Link
-                        to="/role-select"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-smriti-teal-600 dark:hover:text-teal-300 transition-colors"
-                      >
-                        <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                        <span>{t('navigation.switchRole')}</span>
-                      </Link>
-
-                      <Link
-                        to="/economy"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                      >
-                        <Coins className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <span>{t('navigation.economy')}</span>
-                      </Link>
-
-                      <Link
-                        to="/economy?tab=my-rewards"
-                        onClick={() => setShowUserMenu(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                      >
-                        <Award className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                        <span>{t('economy.myRewards')}</span>
-                      </Link>
-                    </div>
-
-                    {/* Logout Button */}
-                    <div className="border-t border-slate-100 dark:border-[#243352] pt-1">
-                      <button
-                        onClick={() => {
-                          setShowUserMenu(false);
-                          handleLogout();
-                        }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer text-left"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>{t('navigation.signOut')}</span>
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
+              {/* Date Badge */}
+              <div className="hidden xl:flex items-center gap-1.5 ml-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-[#0E221E] border border-[#DFEAE2] dark:border-[#183830] text-xs font-medium text-[#5C756D] dark:text-[#7E9C94] shrink-0">
+                <span>{formattedDate}</span>
+                <Calendar className="w-3.5 h-3.5 text-[#5C756D] dark:text-[#7E9C94]" />
+              </div>
             </div>
           ) : (
             <Link
               to="/login"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-smriti-teal-600 hover:bg-smriti-teal-700 text-white text-xs font-black shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#143D30] hover:bg-[#0E2D23] dark:bg-[#2DD4BF] dark:hover:bg-[#20B8A5] text-white dark:text-[#06110F] text-xs font-bold shadow-sm transition-all cursor-pointer"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>{t('navigation.signIn')}</span>

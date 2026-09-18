@@ -23,15 +23,113 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Helper to synchronize a Supabase OAuth session user with Dexie DB and create local session
+  const syncSupabaseSessionToDexie = async (supaUser) => {
+    if (!supaUser) return null;
+    const email = supaUser.email?.toLowerCase();
+    const name = supaUser.user_metadata?.full_name || supaUser.user_metadata?.name || email?.split('@')[0] || 'User';
+    const avatar = supaUser.user_metadata?.avatar_url || supaUser.user_metadata?.picture || null;
+    const targetRole = localStorage.getItem('smriti_oauth_role') || 'caregiver';
+    localStorage.removeItem('smriti_oauth_role');
+
+    await initializeDatabase();
+    let existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
+    const now = new Date().toISOString();
+
+    if (!existingUser) {
+      const userRecord = {
+        name,
+        email,
+        role: targetRole,
+        passwordHash: '',
+        avatar,
+        profileImage: avatar,
+        location: 'Assam, India',
+        relation: targetRole === 'caregiver' ? 'Family Caregiver' : '',
+        designation: targetRole === 'healthcare' ? 'Healthcare Professional' : '',
+        isDemo: false,
+        isVerified: true,
+        status: 'active',
+        lastLoginAt: now,
+        createdAt: now,
+        updatedAt: now
+      };
+      const newId = await db.users.add(userRecord);
+      existingUser = { id: newId, ...userRecord };
+    } else {
+      const updates = { lastLoginAt: now, updatedAt: now };
+      if (!existingUser.profileImage && avatar) updates.profileImage = avatar;
+      if (!existingUser.name && name) updates.name = name;
+      await db.users.update(existingUser.id, updates);
+      existingUser = { ...existingUser, ...updates };
+    }
+
+    const sessionToken = `sess_oauth_${existingUser.id}_${Date.now()}`;
+    const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+    await db.sessions.add({
+      userId: existingUser.id,
+      token: sessionToken,
+      expiresAt,
+      createdAt: now
+    });
+
+    localStorage.setItem('smriti_session_token', sessionToken);
+    localStorage.setItem('smriti_user_id', String(existingUser.id));
+    localStorage.setItem('smriti_user', JSON.stringify(existingUser));
+    setAppMode('production');
+
+    return existingUser;
+  };
+
   // App startup: Initialize Dexie, seed if completely empty, and restore active session
   useEffect(() => {
     let isMounted = true;
+    let authSubscription = null;
+
+    // Listen to Supabase auth events (e.g. returning from Google OAuth redirect)
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          if ((event === 'SIGNED_IN' || event === 'USER_UPDATED') && session?.user) {
+            try {
+              const user = await syncSupabaseSessionToDexie(session.user);
+              if (user && isMounted) {
+                setCurrentUser(user);
+                setIsLoading(false);
+              }
+            } catch (authSyncErr) {
+              console.warn('Failed to sync auth state change to Dexie:', authSyncErr);
+            }
+          }
+        });
+        authSubscription = subscription;
+      } catch (subErr) {
+        console.warn('Supabase onAuthStateChange registration error:', subErr);
+      }
+    }
 
     async function initAndRestoreSession() {
       try {
         await initializeDatabase();
         // NOTE: seedDatabaseIfEmpty() is explicitly decoupled from startup.
         // It runs ONLY when the user clicks 'Try Demo' to preserve honest 0-state.
+
+        // 0. Attempt Supabase OAuth session restoration if redirected back from Google OAuth
+        if (isSupabaseConfigured() && supabase) {
+          try {
+            const { data: { session: supaSession } } = await supabase.auth.getSession();
+            if (supaSession?.user) {
+              const user = await syncSupabaseSessionToDexie(supaSession.user);
+              if (user && isMounted) {
+                setCurrentUser(user);
+                setIsLoading(false);
+                return;
+              }
+            }
+          } catch (supaErr) {
+            console.warn('Supabase OAuth restoration notice:', supaErr);
+          }
+        }
 
         // 1. Attempt session restoration using session token from IndexedDB
         const savedToken = localStorage.getItem('smriti_session_token');
@@ -96,6 +194,9 @@ export function AuthProvider({ children }) {
 
     return () => {
       isMounted = false;
+      if (authSubscription?.unsubscribe) {
+        authSubscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -326,6 +427,159 @@ export function AuthProvider({ children }) {
     } catch (err) {
       console.error('❌ PIN login error:', err);
       return { success: false, error: 'PIN login failed. Please try again.' };
+    }
+  };
+
+  // Helper for Google Identity Services (GIS) Token Client
+  const initGisTokenClient = (clientId, targetRole, resolve) => {
+    try {
+      const client = window.google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'email profile openid',
+        callback: async (tokenResponse) => {
+          if (tokenResponse.error) {
+            resolve({ success: false, error: `Google OAuth was cancelled or failed: ${tokenResponse.error}` });
+            return;
+          }
+          try {
+            const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+              headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+            });
+            if (!userInfoRes.ok) {
+              throw new Error('Failed to fetch profile information from Google.');
+            }
+            const googleUser = await userInfoRes.json();
+            const email = googleUser.email?.toLowerCase();
+            const name = googleUser.name || email?.split('@')[0] || 'User';
+            const avatar = googleUser.picture || null;
+
+            await initializeDatabase();
+            let existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
+            const now = new Date().toISOString();
+
+            if (!existingUser) {
+              const userRecord = {
+                name,
+                email,
+                role: targetRole,
+                passwordHash: '',
+                avatar,
+                profileImage: avatar,
+                location: 'Assam, India',
+                relation: targetRole === 'caregiver' ? 'Family Caregiver' : '',
+                designation: targetRole === 'healthcare' ? 'Healthcare Professional' : '',
+                isDemo: false,
+                isVerified: true,
+                status: 'active',
+                lastLoginAt: now,
+                createdAt: now,
+                updatedAt: now
+              };
+              const newId = await db.users.add(userRecord);
+              existingUser = { id: newId, ...userRecord };
+            } else {
+              const updates = { lastLoginAt: now, updatedAt: now };
+              if (!existingUser.profileImage && avatar) updates.profileImage = avatar;
+              if (!existingUser.name && name) updates.name = name;
+              await db.users.update(existingUser.id, updates);
+              existingUser = { ...existingUser, ...updates };
+            }
+
+            const sessionToken = `sess_gis_${existingUser.id}_${Date.now()}`;
+            const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+            await db.sessions.add({
+              userId: existingUser.id,
+              token: sessionToken,
+              expiresAt,
+              createdAt: now
+            });
+
+            localStorage.setItem('smriti_session_token', sessionToken);
+            localStorage.setItem('smriti_user_id', String(existingUser.id));
+            localStorage.setItem('smriti_user', JSON.stringify(existingUser));
+            setAppMode('production');
+
+            setCurrentUser(existingUser);
+            resolve({ success: true, user: existingUser });
+          } catch (fetchErr) {
+            resolve({ success: false, error: fetchErr.message || 'Failed to authenticate Google user.' });
+          }
+        },
+        error_callback: (nonOAuthError) => {
+          resolve({ success: false, error: nonOAuthError.message || 'Google account prompt was closed.' });
+        }
+      });
+      client.requestAccessToken({ prompt: 'select_account' });
+    } catch (gisErr) {
+      resolve({ success: false, error: gisErr.message || 'Failed to initialize Google login client.' });
+    }
+  };
+
+  // REAL GOOGLE OAUTH FLOW
+  const loginWithGoogle = async (targetRole = 'caregiver') => {
+    try {
+      localStorage.setItem('smriti_oauth_role', targetRole);
+
+      // Provider 1: Supabase Cloud OAuth
+      if (isSupabaseConfigured() && supabase) {
+        const redirectUrl = `${window.location.origin}/login?role=${targetRole}`;
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'select_account'
+            }
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (data?.url && typeof window !== 'undefined') {
+          window.location.href = data.url;
+        }
+
+        return { success: true, url: data?.url };
+      }
+
+      // Provider 2: Google Identity Services (GIS) Client ID
+      const env = (typeof import.meta !== 'undefined' && import.meta.env) || (typeof process !== 'undefined' && process.env) || {};
+      const googleClientId = env.VITE_GOOGLE_CLIENT_ID;
+
+      if (!googleClientId) {
+        return {
+          success: false,
+          error: 'Google OAuth requires cloud configuration. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (with Google provider enabled in your Supabase Dashboard) or VITE_GOOGLE_CLIENT_ID in your .env file.'
+        };
+      }
+
+      return new Promise((resolve) => {
+        if (typeof window === 'undefined') {
+          resolve({ success: false, error: 'Google OAuth is only available in browser.' });
+          return;
+        }
+
+        if (!window.google?.accounts?.oauth2) {
+          const script = document.createElement('script');
+          script.src = 'https://accounts.google.com/gsi/client';
+          script.async = true;
+          script.onload = () => {
+            initGisTokenClient(googleClientId, targetRole, resolve);
+          };
+          script.onerror = () => {
+            resolve({ success: false, error: 'Failed to load Google Identity Services client.' });
+          };
+          document.head.appendChild(script);
+        } else {
+          initGisTokenClient(googleClientId, targetRole, resolve);
+        }
+      });
+    } catch (err) {
+      console.error('❌ Google OAuth initialization error:', err);
+      return { success: false, error: err.message || 'Google OAuth failed to start.' };
     }
   };
 
@@ -643,6 +897,7 @@ export function AuthProvider({ children }) {
         register,
         loginWithEmail,
         loginWithPin,
+        loginWithGoogle,
         loginDemo,
         logout,
         updateUserProfile,

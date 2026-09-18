@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { X, UserPlus, Heart, MapPin, Hospital, KeyRound, Calendar, Mail, Lock, Eye, EyeOff, Globe } from 'lucide-react';
+import { X, UserPlus, Stethoscope, Mail, Lock, Eye, EyeOff, Phone, Building2, MapPin, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { createUserByStaff } from '../../services/userService';
 
-export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onAdded }) {
+export default function AddClinicianModal({ isOpen, onClose, onClinicianCreated }) {
   const { currentUser } = useAuth();
   const { t, language: currentLang } = useLanguage();
 
@@ -13,13 +13,11 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
     email: '',
     password: '',
     confirmPassword: '',
-    age: '72',
-    gender: 'female',
-    language: currentLang || 'as',
-    relation: 'Mother (Amma)',
-    location: 'Titabar, Jorhat, Assam',
+    phone: '',
+    designation: 'PHC Medical Officer',
     phcCenter: 'Titabar PHC, Jorhat',
-    pin: '1234'
+    location: 'Titabar, Jorhat, Assam',
+    language: currentLang || 'en'
   });
 
   const [showPassword, setShowPassword] = useState(false);
@@ -49,7 +47,7 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
     const email = formData.email.trim().toLowerCase();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
-      setError(t('auth.validationEmailRequired') || 'Please enter a valid email address.');
+      setError(t('auth.validationEmailRequired') || 'Please enter a valid professional email address.');
       return;
     }
 
@@ -63,11 +61,6 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
       return;
     }
 
-    if (formData.pin && !/^\d{4}$/.test(formData.pin.trim())) {
-      setError('Patient PIN must be exactly 4 numeric digits.');
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -77,27 +70,23 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
           ...formData,
           name,
           email,
-          role: 'patient',
-          pin: formData.pin ? formData.pin.trim() : '1234'
+          role: 'healthcare'
         }
       });
 
       if (!res.success) {
-        setError(res.error || 'Failed to create patient account.');
+        setError(res.error || 'Failed to create healthcare professional account.');
         setIsSubmitting(false);
         return;
       }
 
-      if (onPatientCreated) {
-        onPatientCreated(res.user?.id);
-      }
-      if (onAdded) {
-        onAdded(res.user?.id);
+      if (onClinicianCreated) {
+        onClinicianCreated(res.user);
       }
 
       onClose();
     } catch (err) {
-      console.error('Failed to create patient account:', err);
+      console.error('Failed to create healthcare account:', err);
       setError(err.message || 'An unexpected error occurred while saving the account.');
     } finally {
       setIsSubmitting(false);
@@ -109,22 +98,22 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
       <div className="bg-white dark:bg-[#131D33] rounded-3xl p-6 md:p-8 max-w-xl w-full border border-slate-200 dark:border-[#243352] shadow-2xl space-y-5 max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-[#243352]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-teal-100 dark:bg-teal-950/80 text-smriti-teal-700 dark:text-teal-300 flex items-center justify-center shrink-0">
-              <UserPlus className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+              <Stethoscope className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-                {t('clinician.addNewPatient') || 'Add New Patient Profile'}
+                {t('clinician.addNewClinicalAccount') || 'Add New Clinical Account'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Creates an authentic patient account with PIN and credential login
+                Register verified medical officers and specialists in the PHC network
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1E293B] transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -137,29 +126,29 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Elder Full Name */}
+          {/* Full Name */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              {t('auth.fullName') || 'Elder Full Name'} *
+              {t('auth.fullName') || 'Full Name & Title'} *
             </label>
             <div className="relative">
-              <Heart className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              <Stethoscope className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="e.g. Bimala Borah"
+                placeholder="e.g. Dr. Priyom Sarma, MBBS"
                 required
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
               />
             </div>
           </div>
 
-          {/* Email Address */}
+          {/* Professional Email */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              {t('auth.email') || 'Patient Account Email'} *
+              {t('clinician.professionalEmail') || 'Professional Email Address'} *
             </label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -168,9 +157,9 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="e.g. bimala.borah@example.com"
+                placeholder="e.g. priyom.sarma@health.gov.in"
                 required
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
               />
             </div>
           </div>
@@ -190,7 +179,7 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
                   onChange={handleChange}
                   placeholder="Min 4 characters"
                   required
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
                 <button
                   type="button"
@@ -215,96 +204,73 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
                   onChange={handleChange}
                   placeholder="Repeat password"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* Age, Gender & Language */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                {t('clinician.years') || 'Age'} *
-              </label>
-              <div className="relative">
-                <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-                <input
-                  type="number"
-                  name="age"
-                  value={formData.age}
-                  onChange={handleChange}
-                  min="30"
-                  max="120"
-                  required
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Gender
-              </label>
-              <select
-                name="gender"
-                value={formData.gender}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
-              >
-                <option value="female">Female</option>
-                <option value="male">Male</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Language
-              </label>
-              <div className="relative">
-                <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 pointer-events-none" />
-                <select
-                  name="language"
-                  value={formData.language}
-                  onChange={handleChange}
-                  className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
-                >
-                  <option value="as">অসমীয়া (Assamese)</option>
-                  <option value="bn">বাংলা (Bengali)</option>
-                  <option value="hi">हिन्दी (Hindi)</option>
-                  <option value="mni">মৈতৈলোন্ (Manipuri)</option>
-                  <option value="en">English</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Relationship & Location */}
+          {/* Contact Phone & Designation */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Relationship
+                {t('clinician.contactPhone') || 'Contact Phone'}
               </label>
-              <select
-                name="relation"
-                value={formData.relation}
-                onChange={handleChange}
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
-              >
-                <option value="Mother (Amma)">Mother (Amma)</option>
-                <option value="Father (Deuta)">Father (Deuta)</option>
-                <option value="Grandmother (Aita)">Grandmother (Aita)</option>
-                <option value="Grandfather (Koka)">Grandfather (Koka)</option>
-                <option value="Spouse">Spouse</option>
-                <option value="Other Relative">Other Relative</option>
-                <option value="Patient">Patient</option>
-              </select>
+              <div className="relative">
+                <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+91 98765 43210"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
             </div>
 
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-                Village / Town / Location
+                {t('clinician.designation') || 'Designation / Role'}
+              </label>
+              <select
+                name="designation"
+                value={formData.designation}
+                onChange={handleChange}
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="PHC Medical Officer">PHC Medical Officer</option>
+                <option value="Community Neurologist">Community Neurologist</option>
+                <option value="Clinical Psychologist">Clinical Psychologist</option>
+                <option value="Community Health Officer (CHO)">Community Health Officer (CHO)</option>
+                <option value="Senior Staff Nurse">Senior Staff Nurse</option>
+                <option value="Medical Social Worker">Medical Social Worker</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Primary Health Center & Posting Location */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Primary Health Center (PHC)
+              </label>
+              <div className="relative">
+                <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <input
+                  type="text"
+                  name="phcCenter"
+                  value={formData.phcCenter}
+                  onChange={handleChange}
+                  placeholder="e.g. Titabar PHC, Jorhat"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
+                Posting Location / District
               </label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -313,52 +279,33 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
                   name="location"
                   value={formData.location}
                   onChange={handleChange}
-                  placeholder="e.g. Titabar, Jorhat, Assam"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
+                  placeholder="e.g. Jorhat, Assam"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
                 />
               </div>
             </div>
           </div>
 
-          {/* Primary Health Center (PHC) */}
+          {/* Preferred Language */}
           <div>
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              Primary Health Center (PHC)
+              Preferred Consultation Language
             </label>
             <div className="relative">
-              <Hospital className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-              <input
-                type="text"
-                name="phcCenter"
-                value={formData.phcCenter}
+              <Globe className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 pointer-events-none" />
+              <select
+                name="language"
+                value={formData.language}
                 onChange={handleChange}
-                placeholder="e.g. Titabar PHC, Jorhat"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none"
-              />
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              >
+                <option value="en">English</option>
+                <option value="as">অসমীয়া (Assamese)</option>
+                <option value="bn">বাংলা (Bengali)</option>
+                <option value="hi">हिन्दी (Hindi)</option>
+                <option value="mni">মৈতৈলোন্ (Manipuri)</option>
+              </select>
             </div>
-          </div>
-
-          {/* 4-Digit Patient PIN */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5">
-              {t('auth.patientPin4Digit') || '4-Digit Patient PIN (for direct elder login)'} *
-            </label>
-            <div className="relative">
-              <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-              <input
-                type="text"
-                name="pin"
-                maxLength="4"
-                value={formData.pin}
-                onChange={handleChange}
-                placeholder="1234"
-                required
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#2E4166] bg-white dark:bg-[#162238] text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-smriti-teal-500 outline-none tracking-widest font-mono"
-              />
-            </div>
-            <p className="text-xs text-slate-400 mt-1">
-              {t('auth.patientPinDesc') || 'Direct numeric PIN for elder voice and keypad sign-in on Screen 1.'}
-            </p>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-[#243352]">
@@ -372,7 +319,7 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-smriti-teal-600 hover:bg-smriti-teal-700 text-white font-bold text-sm shadow-md transition-colors disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
+              className="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md transition-colors disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -382,7 +329,7 @@ export default function AddPatientModal({ isOpen, onClose, onPatientCreated, onA
               ) : (
                 <>
                   <UserPlus className="w-4 h-4" />
-                  <span>{t('clinician.createPatientAccount') || 'Save Patient Account'}</span>
+                  <span>{t('clinician.createHealthcareAccount') || 'Create Healthcare Account'}</span>
                 </>
               )}
             </button>

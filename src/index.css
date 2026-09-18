@@ -4,47 +4,47 @@
 
 @layer base {
   :root {
-    --background: #FAF8F5;
-    --foreground: #0F172A;
+    --background: #F7F5F0;
+    --foreground: #142823;
     --surface-1: #FFFFFF;
-    --surface-2: #FFFFFF;
-    --surface-3: #F8FAFC;
+    --surface-2: #EFF6F1;
+    --surface-3: #E6F0EA;
     --card: #FFFFFF;
-    --card-foreground: #0F172A;
-    --card-muted: #F8FAFC;
-    --muted: #F1F5F9;
-    --muted-foreground: #475569;
-    --border: #E2E8F0;
-    --border-subtle: #F1F5F9;
-    --input: #E2E8F0;
+    --card-foreground: #142823;
+    --card-muted: #F3F8F5;
+    --muted: #EFF5F1;
+    --muted-foreground: #5C756D;
+    --border: #DFEAE2;
+    --border-subtle: #EBF2ED;
+    --input: #DBE7DF;
     --input-bg: #FFFFFF;
-    --ring: #0D9488;
-    --primary: #0D9488;
+    --ring: #143D30;
+    --primary: #143D30;
     --primary-foreground: #FFFFFF;
-    --accent: #EA580C;
+    --accent: #0D9488;
     --accent-foreground: #FFFFFF;
   }
 
   .dark {
-    --background: #0B1120;
-    --foreground: #F8FAFC;
-    --surface-1: #131D33;
-    --surface-2: #1E293B;
-    --surface-3: #25334D;
-    --card: #131D33;
-    --card-foreground: #F8FAFC;
-    --card-muted: #1E293B;
-    --muted: #1E293B;
-    --muted-foreground: #94A3B8;
-    --border: #243352;
-    --border-subtle: #1A2742;
-    --input: #2E4166;
-    --input-bg: #162238;
-    --ring: #14B8A6;
-    --primary: #14B8A6;
-    --primary-foreground: #0B1120;
-    --accent: #FB923C;
-    --accent-foreground: #0B1120;
+    --background: #06110F;
+    --foreground: #F0F6F4;
+    --surface-1: #0B1C18;
+    --surface-2: #102520;
+    --surface-3: #16302A;
+    --card: #0E221E;
+    --card-foreground: #F0F6F4;
+    --card-muted: #132A24;
+    --muted: #132A24;
+    --muted-foreground: #7E9C94;
+    --border: #183830;
+    --border-subtle: #132C26;
+    --input: #1C4037;
+    --input-bg: #0B1C18;
+    --ring: #2DD4BF;
+    --primary: #2DD4BF;
+    --primary-foreground: #06110F;
+    --accent: #34D399;
+    --accent-foreground: #06110F;
   }
 
   body {
@@ -127,36 +127,36 @@
 
 /* Subtle background grain & ambient warm aura (Light) */
 .bg-ner-pattern {
-  background-color: #FAF8F5;
+  background-color: #F7F5F0;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(13, 148, 136, 0.05) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(234, 88, 12, 0.05) 0px, transparent 50%),
-    radial-gradient(#0d9488 0.75px, transparent 0.75px), 
-    radial-gradient(#ea580c 0.75px, #FAF8F5 0.75px);
+    radial-gradient(at 0% 0%, rgba(20, 61, 48, 0.04) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(13, 148, 136, 0.05) 0px, transparent 50%),
+    radial-gradient(#143d30 0.6px, transparent 0.6px), 
+    radial-gradient(#0d9488 0.6px, #F7F5F0 0.6px);
   background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
   background-position: 0 0, 0 0, 0 0, 16px 16px;
 }
 
 /* Subtle background grain & ambient nocturnal aura (Dark) */
 .dark .bg-ner-pattern {
-  background-color: #0B1120;
+  background-color: #06110F;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(20, 184, 166, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(251, 146, 60, 0.07) 0px, transparent 50%),
-    radial-gradient(#14B8A6 0.75px, transparent 0.75px), 
-    radial-gradient(#FB923C 0.75px, #0B1120 0.75px);
+    radial-gradient(at 0% 0%, rgba(45, 212, 191, 0.06) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.05) 0px, transparent 50%),
+    radial-gradient(#2DD4BF 0.6px, transparent 0.6px), 
+    radial-gradient(#10B981 0.6px, #06110F 0.6px);
   background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
   background-position: 0 0, 0 0, 0 0, 16px 16px;
 }
 
 /* Accessibility high-contrast focus rings */
 *:focus-visible {
-  outline: 3px solid #0d9488;
+  outline: 3px solid #143D30;
   outline-offset: 3px;
 }
 
 .dark *:focus-visible {
-  outline: 3px solid #14b8a6;
+  outline: 3px solid #2DD4BF;
   outline-offset: 3px;
 }
 
@@ -166,25 +166,25 @@
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #EFF5F1;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #C4D9CD;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #9DBFA9;
 }
 
 .dark ::-webkit-scrollbar-track {
-  background: #0B1120;
+  background: #0B1C18;
 }
 .dark ::-webkit-scrollbar-thumb {
-  background: #243352;
+  background: #1B3E35;
   border-radius: 9999px;
 }
 .dark ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #28574B;
 }
 
 /* PIN Keypad Ultra-Fast Interaction & Shake Animation */

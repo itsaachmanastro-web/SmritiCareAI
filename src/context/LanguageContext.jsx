@@ -9,14 +9,16 @@ const LOCALE_MAP = {
   en: 'en-IN',
   hi: 'hi-IN',
   as: 'as-IN',
-  bn: 'bn-IN'
+  bn: 'bn-IN',
+  mni: 'mni-IN'
 };
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English', native: 'English' },
-  { code: 'hi', label: 'Hindi', native: 'हिन्दी' },
-  { code: 'as', label: 'Assamese', native: 'অসমীয়া' },
-  { code: 'bn', label: 'Bengali', native: 'বাংলা' }
+  { code: 'en', label: 'English', native: 'English', flag: '🇬🇧' },
+  { code: 'hi', label: 'Hindi', native: 'हिन्दी', flag: '🇮🇳' },
+  { code: 'as', label: 'Assamese', native: 'অসমীয়া', flag: '🌺' },
+  { code: 'bn', label: 'Bengali', native: 'বাংলা', flag: '🇧🇩' },
+  { code: 'mni', label: 'Manipuri', native: 'মৈতৈলোন্', flag: '🛡️' }
 ];
 
 /**

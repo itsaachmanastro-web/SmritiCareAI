@@ -112,11 +112,34 @@ export default {
           sand: '#F5F0E8',
           linen: '#F9F6F0',
           bark: '#1E1B18',
+          forest: {
+            DEFAULT: '#183C33',
+            50: '#f2f8f6',
+            100: '#e1efe9',
+            200: '#c5ded4',
+            300: '#9cc4b6',
+            400: '#6ea494',
+            500: '#4c8676',
+            600: '#386a5d',
+            700: '#2c534a',
+            800: '#23423b',
+            900: '#183c33',
+            950: '#0c221c',
+          },
+          dark: {
+            bg: '#081014',
+            surface: '#0d181e',
+            card: '#112028',
+            border: '#1a2e38',
+            accent: '#14b8a6',
+          }
         }
       },
       fontFamily: {
         sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        serif: ['Lora', 'Georgia', 'Cambria', 'serif'],
         display: ['Outfit', 'Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        handwriting: ['Caveat', 'cursive'],
       },
       boxShadow: {
         'healthcare': '0 4px 20px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.04)',
