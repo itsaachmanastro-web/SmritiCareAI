@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
 
   // Populate process.env with loaded variables for server middleware
   const geminiKey = env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || '';
-  const geminiModel = env.GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+  const geminiModel = env.GEMINI_MODEL || process.env.GEMINI_MODEL || 'gemini-3.6-flash';
   process.env.GEMINI_API_KEY = geminiKey;
   process.env.GEMINI_MODEL = geminiModel;
 

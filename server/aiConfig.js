@@ -7,9 +7,11 @@ export const DEFAULT_GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flas
 
 export const PREFERRED_FLASH_MODELS = [
   'gemini-3.6-flash',
+  'gemini-3.7-flash',
+  'gemini-3.8-flash',
+  'gemini-flash-latest',
   'gemini-3.5-flash',
-  'gemini-2.5-flash',
-  'gemini-flash'
+  'gemini-3.5-flash-lite'
 ];
 
 export const DEFAULT_SYSTEM_PROMPT = `You are Smriti, the AI assistant inside SmritiCare — "AI for Brighter Minds".
@@ -332,9 +334,9 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
  * Executes a fetch with exponential backoff and jitter for transient 429/503 errors.
- * Never loops infinitely; capped at maxRetries (default 3).
+ * Never loops infinitely; capped at maxRetries (default 2).
  */
-export async function fetchWithBackoff(url, options = {}, maxRetries = 3) {
+export async function fetchWithBackoff(url, options = {}, maxRetries = 2) {
   let attempt = 0;
   let lastStatus = 0;
   let lastErrorText = '';
@@ -342,7 +344,8 @@ export async function fetchWithBackoff(url, options = {}, maxRetries = 3) {
 
   while (attempt <= maxRetries) {
     try {
-      const res = await fetch(url, options);
+      const fetchSignal = options.signal || (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(8500) : undefined);
+      const res = await fetch(url, { ...options, signal: fetchSignal });
       if (res.ok) {
         return { ok: true, response: res, status: res.status, diagnostics: null };
       }
@@ -360,8 +363,8 @@ export async function fetchWithBackoff(url, options = {}, maxRetries = 3) {
       );
       lastDiagnostics = diagnostics;
 
-      // Only retry on transient 429 (quota/rate limit) or 503/504 (service temporarily unavailable)
-      const isTransient = res.status === 429 || res.status === 503 || res.status === 504;
+      // Transient 429 (quota/rate limit) or 500/502/503/504 (service temporarily unavailable/capacity)
+      const isTransient = res.status === 429 || res.status === 500 || res.status === 502 || res.status === 503 || res.status === 504;
       if (!isTransient || attempt >= maxRetries) {
         console.warn(`[Gemini API ${res.status}] Diagnostics:`, {
           status: diagnostics.status,
@@ -378,15 +381,15 @@ export async function fetchWithBackoff(url, options = {}, maxRetries = 3) {
 
       attempt++;
 
-      // Compute backoff: respect server retryDelaySeconds if available, else exponential backoff with jitter
+      // Compute backoff: respect server retryDelaySeconds if short, else exponential backoff with jitter
       let backoffMs;
-      if (diagnostics.retryDelaySeconds && diagnostics.retryDelaySeconds > 0 && diagnostics.retryDelaySeconds <= 20) {
-        backoffMs = diagnostics.retryDelaySeconds * 1000 + Math.random() * 400;
+      if (diagnostics.retryDelaySeconds && diagnostics.retryDelaySeconds > 0 && diagnostics.retryDelaySeconds <= 5) {
+        backoffMs = diagnostics.retryDelaySeconds * 1000 + Math.random() * 250;
       } else {
-        // Attempt 1: ~1s, Attempt 2: ~2s, Attempt 3: ~4s + jitter
-        const baseDelay = Math.pow(2, attempt - 1) * 1000;
-        const jitter = Math.random() * 400;
-        backoffMs = Math.min(baseDelay + jitter, 8000);
+        // Attempt 1: ~800ms, Attempt 2: ~1600ms + jitter
+        const baseDelay = Math.pow(2, attempt - 1) * 800;
+        const jitter = Math.random() * 300;
+        backoffMs = Math.min(baseDelay + jitter, 3000);
       }
 
       console.warn(`[Gemini ${res.status}] Transient rate limit/error. Attempt ${attempt}/${maxRetries}. Backing off for ${Math.round(backoffMs)}ms...`);
@@ -401,7 +404,7 @@ export async function fetchWithBackoff(url, options = {}, maxRetries = 3) {
         };
       }
       attempt++;
-      const backoffMs = Math.pow(2, attempt - 1) * 1000 + Math.random() * 300;
+      const backoffMs = Math.pow(2, attempt - 1) * 800 + Math.random() * 200;
       await sleep(backoffMs);
     }
   }
@@ -429,11 +432,14 @@ export async function testGenerateContent(apiKey, modelName) {
         }
       ],
       generationConfig: {
-        temperature: 0.3,
-        maxOutputTokens: 256
+        temperature: 0.2,
+        maxOutputTokens: 512,
+        thinkingConfig: {
+          thinkingBudget: 0
+        }
       }
     })
-  }, 2);
+  }, 1);
 
   if (!result.ok) {
     return {

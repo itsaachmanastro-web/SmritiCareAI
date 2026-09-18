@@ -304,21 +304,44 @@ export async function handleTest(req, res) {
     let testCall = await testGenerateContent(keyToTest, chosenModel);
     let availableModels = null;
 
-    // Only if requested model returns 404, discover alternative supported Flash models
-    if (!testCall.ok && testCall.status === 404) {
-      console.warn(`Model ${chosenModel} returned 404 during test. Attempting dynamic discovery...`);
-      const discovery = await discoverAndVerifyModel(keyToTest, requestedModel);
-      if (discovery.ok && discovery.model) {
-        chosenModel = discovery.model;
-        availableModels = discovery.availableModels;
-        testCall = await testGenerateContent(keyToTest, chosenModel);
-      } else if (!discovery.ok) {
-        testCall = {
-          ok: false,
-          status: discovery.status,
-          error: discovery.error,
-          diagnostics: null
-        };
+    // If requested model returns 404, 429, 503, 500, 502, 504, attempt fallback to other supported Flash models
+    const shouldFallback = !testCall.ok && (
+      testCall.status === 404 ||
+      testCall.status === 429 ||
+      testCall.status === 503 ||
+      testCall.status === 500 ||
+      testCall.status === 502 ||
+      testCall.status === 504
+    );
+
+    if (shouldFallback) {
+      console.warn(`Model ${chosenModel} returned ${testCall.status} during test. Attempting fallback to candidate Flash models...`);
+      const candidates = PREFERRED_FLASH_MODELS.filter(m => m !== chosenModel);
+      let fallbackSucceeded = false;
+
+      for (const candidate of candidates) {
+        console.warn(`Attempting test ping on candidate Flash model: ${candidate}...`);
+        const candidateTest = await testGenerateContent(keyToTest, candidate);
+        if (candidateTest.ok) {
+          chosenModel = candidate;
+          testCall = candidateTest;
+          fallbackSucceeded = true;
+          console.log(`Fallback succeeded! Switched active model to: ${chosenModel}`);
+          break;
+        }
+      }
+
+      if (!fallbackSucceeded) {
+        console.warn('Pre-listed candidates failed. Querying Google models discovery endpoint...');
+        const discovery = await discoverAndVerifyModel(keyToTest, requestedModel);
+        if (discovery.ok && discovery.model && discovery.model !== chosenModel) {
+          chosenModel = discovery.model;
+          availableModels = discovery.availableModels;
+          const discTest = await testGenerateContent(keyToTest, chosenModel);
+          if (discTest.ok) {
+            testCall = discTest;
+          }
+        }
       }
     }
 
@@ -477,22 +500,35 @@ export async function handleChat(req, res) {
         contents,
         generationConfig: {
           temperature: 0.5,
-          maxOutputTokens: 1024
+          maxOutputTokens: 1024,
+          thinkingConfig: {
+            thinkingBudget: 0
+          }
         }
       })
-    }, 3);
+    }, 2);
 
-    if (!geminiCall.ok && geminiCall.status === 404) {
-      console.warn(`Model ${modelName} returned 404. Attempting dynamic model discovery...`);
-      const discovery = await discoverAndVerifyModel(activeApiKey);
-      if (discovery.ok && discovery.model !== modelName) {
-        modelName = discovery.model;
-        setActiveModel(modelName);
-        apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${activeApiKey}`;
-        geminiCall = await fetchWithBackoff(apiUrl, {
+    const shouldChatFallback = !geminiCall.ok && (
+      geminiCall.status === 404 ||
+      geminiCall.status === 429 ||
+      geminiCall.status === 503 ||
+      geminiCall.status === 500 ||
+      geminiCall.status === 502 ||
+      geminiCall.status === 504
+    );
+
+    if (shouldChatFallback) {
+      console.warn(`Model ${modelName} returned ${geminiCall.status}. Attempting candidate model fallback for chat...`);
+      const candidates = PREFERRED_FLASH_MODELS.filter(m => m !== modelName);
+      let fallbackSucceeded = false;
+
+      for (const candidate of candidates) {
+        console.warn(`Attempting chat on candidate Flash model: ${candidate}...`);
+        const candidateUrl = `https://generativelanguage.googleapis.com/v1beta/models/${candidate}:generateContent?key=${activeApiKey}`;
+        const fallbackCall = await fetchWithBackoff(candidateUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          modelName,
+          modelName: candidate,
           body: JSON.stringify({
             systemInstruction: {
               parts: [{ text: effectiveSystemPrompt }]
@@ -500,10 +536,51 @@ export async function handleChat(req, res) {
             contents,
             generationConfig: {
               temperature: 0.5,
-              maxOutputTokens: 1024
+              maxOutputTokens: 1024,
+              thinkingConfig: {
+                thinkingBudget: 0
+              }
             }
           })
-        }, 3);
+        }, 1);
+
+        if (fallbackCall.ok) {
+          modelName = candidate;
+          setActiveModel(candidate);
+          apiUrl = candidateUrl;
+          geminiCall = fallbackCall;
+          fallbackSucceeded = true;
+          console.log(`Chat fallback succeeded! Switched active model to: ${modelName}`);
+          break;
+        }
+      }
+
+      if (!fallbackSucceeded) {
+        console.warn('Pre-listed candidates failed. Querying Google models discovery endpoint...');
+        const discovery = await discoverAndVerifyModel(activeApiKey);
+        if (discovery.ok && discovery.model && discovery.model !== modelName) {
+          modelName = discovery.model;
+          setActiveModel(modelName);
+          apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${activeApiKey}`;
+          geminiCall = await fetchWithBackoff(apiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            modelName,
+            body: JSON.stringify({
+              systemInstruction: {
+                parts: [{ text: effectiveSystemPrompt }]
+              },
+              contents,
+              generationConfig: {
+                temperature: 0.5,
+                maxOutputTokens: 1024,
+                thinkingConfig: {
+                  thinkingBudget: 0
+                }
+              }
+            })
+          }, 1);
+        }
       }
     }
 
@@ -549,7 +626,10 @@ export async function handleChat(req, res) {
               contents: continueContents,
               generationConfig: {
                 temperature: 0.2,
-                maxOutputTokens: 512
+                maxOutputTokens: 512,
+                thinkingConfig: {
+                  thinkingBudget: 0
+                }
               }
             })
           }, 1);

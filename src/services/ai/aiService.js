@@ -55,7 +55,7 @@ export class AIService {
     } catch (err) {
       console.warn('Could not fetch server AI status:', err);
     }
-    return { hasKey: false, model: 'gemini-3.5-flash', defaultModel: 'gemini-3.5-flash' };
+    return { hasKey: false, model: 'gemini-3.6-flash', defaultModel: 'gemini-3.6-flash' };
   }
 
   /**
@@ -115,7 +115,7 @@ export class AIService {
           status: 0,
           httpStatus: 0,
           error: `❌ Could not connect to local server test endpoint: ${err.message}`,
-          model: model || 'gemini-3.5-flash'
+          model: model || 'gemini-3.6-flash'
         };
       } finally {
         this._currentTestPromise = null;
@@ -345,10 +345,10 @@ export class AIService {
         });
       }
 
-      if (response.status === 429) {
+      if (response.status === 429 || response.status >= 500) {
         const errData = await safeJson(response, {});
 
-        console.warn('Gemini chat API rate-limited (429), serving local SmritiCare fallback:', errData);
+        console.warn(`Gemini chat API status ${response.status}, serving local SmritiCare fallback:`, errData);
         const localResult = await localFallbackProvider.generateResponse(userQuery, {
           currentLanguage: language,
           userContext,
@@ -366,8 +366,11 @@ export class AIService {
           language,
           timestamp: new Date().toISOString(),
           source: 'local_fallback',
-          isRateLimited: true,
-          notice: errData.error || 'Gemini is temporarily rate-limited. Serving local SmritiCare knowledge.'
+          isRateLimited: response.status === 429,
+          isServiceError: response.status >= 500,
+          notice: errData.error || (response.status === 429
+            ? 'Gemini is temporarily rate-limited. Serving local SmritiCare knowledge.'
+            : 'Gemini service temporarily unavailable. Serving local SmritiCare knowledge.')
         };
       }
 
@@ -388,7 +391,7 @@ export class AIService {
             action: data.action || null,
             timestamp: data.timestamp || new Date().toISOString(),
             source: data.source || 'gemini',
-            model: data.model || 'gemini-3.5-flash'
+            model: data.model || 'gemini-3.6-flash'
           };
         }
 

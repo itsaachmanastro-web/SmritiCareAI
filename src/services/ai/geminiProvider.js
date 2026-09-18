@@ -6,7 +6,7 @@
 
 export class GeminiProvider {
   constructor() {
-    this.model = 'gemini-3.5-flash';
+    this.model = 'gemini-3.6-flash';
   }
 
   isAvailable() {

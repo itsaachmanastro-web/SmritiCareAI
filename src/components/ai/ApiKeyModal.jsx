@@ -17,10 +17,10 @@ import { aiService } from '../../services/ai/aiService';
 
 export default function ApiKeyModal({ isOpen, onClose }) {
   const [apiKey, setApiKey] = useState('');
-  const [serverStatus, setServerStatus] = useState({ hasKey: false, model: 'gemini-3.5-flash' });
+  const [serverStatus, setServerStatus] = useState({ hasKey: false, model: 'gemini-3.6-flash' });
   // 'untested' | 'testing' | 'connected' | 'rate_limited' | 'auth_error' | 'not_found' | 'service_error' | 'failed'
   const [connectionState, setConnectionState] = useState('untested');
-  const [activeModel, setActiveModel] = useState('gemini-3.5-flash');
+  const [activeModel, setActiveModel] = useState('gemini-3.6-flash');
   const [errorDetail, setErrorDetail] = useState('');
   const [sampleResponse, setSampleResponse] = useState('');
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -179,7 +179,7 @@ export default function ApiKeyModal({ isOpen, onClose }) {
   const handleClearServerKey = async () => {
     try {
       await aiService.configureServerKey('');
-      setServerStatus({ hasKey: false, model: 'gemini-3.5-flash' });
+      setServerStatus({ hasKey: false, model: 'gemini-3.6-flash' });
       setApiKey('');
       setConnectionState('untested');
       setErrorDetail('');
