@@ -10,3 +10,5 @@ export * from './generators/BihuMemoryGenerator.js';
 export * from './generators/MekhelaPatternGenerator.js';
 export * from './generators/TeaGardenRoutineGenerator.js';
 export * from './generators/SoundsOfHillsGenerator.js';
+export * from './MemoryMotionEngine.js';
+export * from '../../data/memoryMotionChallenges.js';

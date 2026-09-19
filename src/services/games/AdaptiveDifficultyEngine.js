@@ -39,7 +39,12 @@ export const GAME_TYPE_DOMAINS = {
   soundshills: 'auditoryAttention',
   attention: 'auditoryAttention',
   sound: 'auditoryAttention',
-  auditoryAttention: 'auditoryAttention'
+  auditoryAttention: 'auditoryAttention',
+
+  memorymotion: 'videoMemory',
+  motion: 'videoMemory',
+  video: 'videoMemory',
+  videoMemory: 'videoMemory'
 };
 
 /**

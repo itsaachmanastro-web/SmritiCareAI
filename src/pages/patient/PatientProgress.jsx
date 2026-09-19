@@ -27,7 +27,8 @@ export default function PatientProgress() {
     { title: t('games.bihu.title'), desc: t('games.bihu.desc'), emoji: '🥁', color: 'bg-teal-50 dark:bg-teal-950/40 border-teal-300 dark:border-teal-700/60' },
     { title: t('games.teagarden.title'), desc: t('games.teagarden.desc'), emoji: '🍵', color: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60' },
     { title: t('games.mekhela.title'), desc: t('games.mekhela.desc'), emoji: '🧵', color: 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60' },
-    { title: t('games.soundshills.title'), desc: t('games.soundshills.desc'), emoji: '🎺', color: 'bg-orange-50 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700/60' }
+    { title: t('games.soundshills.title'), desc: t('games.soundshills.desc'), emoji: '🎺', color: 'bg-orange-50 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700/60' },
+    { title: t('games.memorymotion.title') || 'Memory Motion', desc: t('games.memorymotion.desc') || 'Watch short cultural moments and respond', emoji: '🎬', color: 'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-300 dark:border-indigo-700/60' }
   ];
 
   return (

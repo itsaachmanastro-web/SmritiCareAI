@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Play, Sparkles, Brain, Award, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Play, Sparkles, Brain, Award, ShieldCheck, Film } from 'lucide-react';
 import ElderButton from '../../components/common/ElderButton';
 import { JaapiIcon, GamosaIcon, TeaLeafIcon, PepaIcon } from '../../components/common/NerIcons';
 import { useLanguage } from '../../context/LanguageContext';
@@ -81,6 +81,18 @@ export default function PatientGamesList() {
       icon: PepaIcon,
       color: 'bg-orange-50/90 dark:bg-[#131D33] border-orange-300 dark:border-orange-800/80 text-orange-950 dark:text-orange-100',
       btnVariant: 'orange'
+    },
+    {
+      id: 'memorymotion',
+      domainKey: 'videoMemory',
+      title: t('games.memorymotion.title') || 'Memory Motion',
+      domain: t('games.memorymotion.subtitle') || 'Watch • Remember • Respond',
+      desc: t('games.memorymotion.desc') || 'Watch short cultural life moments and answer observational questions at your own comfortable pace.',
+      culturalTag: 'Scenic & Cultural Video',
+      path: '/patient/games/memorymotion',
+      icon: Film,
+      color: 'bg-indigo-50/90 dark:bg-[#131D33] border-indigo-300 dark:border-indigo-800/80 text-indigo-950 dark:text-indigo-100',
+      btnVariant: 'primary'
     }
   ];
 
@@ -97,7 +109,7 @@ export default function PatientGamesList() {
         </button>
 
         <span className="text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#131D33] px-3.5 py-1.5 rounded-full border border-slate-200 dark:border-[#243352] shadow-xs">
-          {t('dashboard.fourGamesReady')}
+          {t('dashboard.fiveGamesReady') || t('dashboard.fourGamesReady') || '5 Games Ready'}
         </span>
       </div>
 

@@ -24,6 +24,7 @@ import BihuMemoryGame from './pages/patient/games/BihuMemoryGame';
 import MekhelaPatternGame from './pages/patient/games/MekhelaPatternGame';
 import TeaGardenRoutineGame from './pages/patient/games/TeaGardenRoutineGame';
 import SoundsOfHillsGame from './pages/patient/games/SoundsOfHillsGame';
+import MemoryMotionGame from './pages/patient/games/MemoryMotionGame';
 import CaregiverDashboard from './pages/caregiver/CaregiverDashboard';
 import ClinicianDashboard from './pages/clinician/ClinicianDashboard';
 import CommunityPage from './pages/community/CommunityPage';
@@ -147,6 +148,7 @@ export default function App() {
           <Route path="/patient/games/mekhela" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><MekhelaPatternGame /></RequireAuth>} />
           <Route path="/patient/games/teagarden" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><TeaGardenRoutineGame /></RequireAuth>} />
           <Route path="/patient/games/soundshills" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><SoundsOfHillsGame /></RequireAuth>} />
+          <Route path="/patient/games/memorymotion" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><MemoryMotionGame /></RequireAuth>} />
           <Route path="/patient/reminders" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientReminders /></RequireAuth>} />
           <Route path="/patient/progress" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientProgress /></RequireAuth>} />
 
