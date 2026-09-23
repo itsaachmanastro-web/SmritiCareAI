@@ -89,6 +89,7 @@ export default function BihuMemoryGame() {
   const [consecutiveMistakes, setConsecutiveMistakes] = useState(0);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [finalScore, setFinalScore] = useState(100);
+  const [adaptationData, setAdaptationData] = useState(null);
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [previewCount, setPreviewCount] = useState(0);
 
@@ -243,6 +244,9 @@ export default function BihuMemoryGame() {
       if (result) {
         setContinuousDiff(result.newDifficulty);
         setDifficulty(result.discreteLevel);
+        if (result.adaptation) {
+          setAdaptationData(result.adaptation);
+        }
         if (result.encouragementMessage) {
           setAdaptiveSupport(result.encouragementMessage);
         }
@@ -464,6 +468,8 @@ export default function BihuMemoryGame() {
           stars={finalScore >= 85 ? 3 : finalScore >= 65 ? 2 : 1}
           timeTaken={timerSeconds}
           mistakes={mistakes}
+          adaptationData={adaptationData}
+          difficultyLevel={difficulty}
           onPlayAgain={() => startNewGame(difficulty)}
           onNext={handleNextActivity}
           gameName="Bihu Memory Pairs"

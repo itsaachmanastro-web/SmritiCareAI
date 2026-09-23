@@ -28,10 +28,12 @@ import { SmritiLogo } from '../components/common/NerIcons';
 
 export default function RoleSelectPage() {
   const navigate = useNavigate();
-  const { loginDemo } = useAuth();
+  const { loginDemo, loginContinuous } = useAuth();
   const { isDark, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
+  const [isSwitching, setIsSwitching] = useState(false);
+  const [switchingRole, setSwitchingRole] = useState(null);
 
   const currentLangObj = SUPPORTED_LANGUAGES.find(l => l.code === language) || SUPPORTED_LANGUAGES[0];
 
@@ -41,13 +43,21 @@ export default function RoleSelectPage() {
 
   const handleInstantDemo = async (e, role) => {
     e.stopPropagation();
-    await loginDemo(role);
-    if (role === 'patient') {
-      navigate('/patient/home');
-    } else if (role === 'healthcare') {
-      navigate('/clinician/dashboard');
-    } else {
-      navigate('/caregiver/dashboard');
+    setIsSwitching(true);
+    setSwitchingRole(role);
+    try {
+      const user = await loginDemo(role);
+      const finalRole = user?.role || role;
+      if (finalRole === 'patient') {
+        navigate('/patient/home');
+      } else if (finalRole === 'healthcare' || finalRole === 'clinician') {
+        navigate('/clinician/dashboard');
+      } else {
+        navigate('/caregiver/dashboard');
+      }
+    } finally {
+      setIsSwitching(false);
+      setSwitchingRole(null);
     }
   };
 
@@ -269,17 +279,28 @@ export default function RoleSelectPage() {
             <div className="mt-7 pt-4 space-y-2">
               <button
                 type="button"
+                disabled={isSwitching}
                 onClick={() => handleSelectRole('patient')}
-                className="w-full py-3 px-4 rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 bg-[#99D5B7] hover:bg-[#86EFAC] text-[#091D16] active:scale-98"
+                className="w-full py-3 px-4 rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 bg-[#99D5B7] hover:bg-[#86EFAC] text-[#091D16] active:scale-98 disabled:opacity-75"
               >
-                <span>{t('auth.continueAsPatient') || 'Continue as Patient'}</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSwitching && switchingRole === 'patient' ? (
+                  <span className="inline-flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 rounded-full border-2 border-[#091D16] border-t-transparent animate-spin" />
+                    <span>Loading Patient Account...</span>
+                  </span>
+                ) : (
+                  <>
+                    <span>{t('auth.continueAsPatient') || 'Continue as Patient'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
 
               <button
                 type="button"
+                disabled={isSwitching}
                 onClick={(e) => handleInstantDemo(e, 'patient')}
-                className="w-full text-center py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                className="w-full text-center py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
               >
                 <Sparkles className="w-3 h-3 text-[#86EFAC]" />
                 <span>{t('auth.instantDemoAmma') || 'Instant Demo: Amma'}</span>
@@ -354,17 +375,28 @@ export default function RoleSelectPage() {
             <div className="mt-7 pt-4 space-y-2">
               <button
                 type="button"
+                disabled={isSwitching}
                 onClick={() => handleSelectRole('caregiver')}
-                className="w-full py-3 px-4 rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 bg-[#F4A88E] hover:bg-[#FCA590] text-[#280F08] active:scale-98"
+                className="w-full py-3 px-4 rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 bg-[#F4A88E] hover:bg-[#FCA590] text-[#280F08] active:scale-98 disabled:opacity-75"
               >
-                <span>{t('auth.continueAsCaregiver') || 'Continue as Caregiver'}</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSwitching && switchingRole === 'caregiver' ? (
+                  <span className="inline-flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 rounded-full border-2 border-[#280F08] border-t-transparent animate-spin" />
+                    <span>Loading Caregiver Account...</span>
+                  </span>
+                ) : (
+                  <>
+                    <span>{t('auth.continueAsCaregiver') || 'Continue as Caregiver'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
 
               <button
                 type="button"
+                disabled={isSwitching}
                 onClick={(e) => handleInstantDemo(e, 'caregiver')}
-                className="w-full text-center py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                className="w-full text-center py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
               >
                 <Sparkles className="w-3 h-3 text-[#FCA5A5]" />
                 <span>{t('auth.instantDemoPriya') || 'Instant Demo: Priya'}</span>
@@ -439,17 +471,28 @@ export default function RoleSelectPage() {
             <div className="mt-7 pt-4 space-y-2">
               <button
                 type="button"
+                disabled={isSwitching}
                 onClick={() => handleSelectRole('healthcare')}
-                className="w-full py-3 px-4 rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 bg-[#8CB8DE] hover:bg-[#93C5FD] text-[#0B1E30] active:scale-98"
+                className="w-full py-3 px-4 rounded-full font-semibold text-sm transition-all shadow-md cursor-pointer flex items-center justify-center gap-2 bg-[#8CB8DE] hover:bg-[#93C5FD] text-[#0B1E30] active:scale-98 disabled:opacity-75"
               >
-                <span>{t('auth.continueAsClinician') || 'Continue as Clinician'}</span>
-                <ArrowRight className="w-4 h-4" />
+                {isSwitching && switchingRole === 'healthcare' ? (
+                  <span className="inline-flex items-center gap-2">
+                    <div className="w-3.5 h-3.5 rounded-full border-2 border-[#0B1E30] border-t-transparent animate-spin" />
+                    <span>Loading Clinician Account...</span>
+                  </span>
+                ) : (
+                  <>
+                    <span>{t('auth.continueAsClinician') || 'Continue as Clinician'}</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
 
               <button
                 type="button"
+                disabled={isSwitching}
                 onClick={(e) => handleInstantDemo(e, 'healthcare')}
-                className="w-full text-center py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                className="w-full text-center py-1 text-[11px] text-slate-400 hover:text-slate-200 transition-colors flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
               >
                 <Sparkles className="w-3 h-3 text-[#93C5FD]" />
                 <span>{t('auth.instantDemoDrArun') || 'Instant Demo: Dr. Phukan'}</span>

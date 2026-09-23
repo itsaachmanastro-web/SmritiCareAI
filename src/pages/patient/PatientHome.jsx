@@ -12,17 +12,23 @@ import {
   Sparkles, 
   MessageSquare, 
   Leaf, 
-  ChevronRight,
-  Heart,
-  Volume2,
-  Grid
+  ChevronRight, 
+  Heart, 
+  Volume2, 
+  Grid,
+  Lock,
+  Crown
 } from 'lucide-react';
 import EmergencyCallModal from '../../components/patient/EmergencyCallModal';
+import FeatureLockedModal from '../../components/common/FeatureLockedModal';
+import { usePatientLocation } from '../../hooks/usePatientLocation';
 import { db } from '../../db/dexie';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAssistant } from '../../context/AssistantContext';
+import { useEntitlements } from '../../hooks/useEntitlements';
+import { FEATURE_KEYS } from '../../services/subscriptionService';
 import { getTodaysChallenge } from '../../services/games';
 
 export default function PatientHome() {
@@ -31,13 +37,26 @@ export default function PatientHome() {
   const { isDark } = useTheme();
   const { t } = useLanguage();
   const { openAssistant } = useAssistant();
+  const { canAccessAllGames, canAccessVoiceAi } = useEntitlements();
   const [showCallModal, setShowCallModal] = useState(false);
   const [todaysChallenge, setTodaysChallenge] = useState(null);
+  const [lockedModal, setLockedModal] = useState({ isOpen: false, feature: FEATURE_KEYS.ALL_CULTURAL_GAMES, title: '', desc: '' });
+
+  // Maintain active background location broadcasting for caregiver safety
+  usePatientLocation(currentUser?.id || 1, true);
 
   // Live queries from Dexie scoped to current user
   const currentUserId = currentUser?.id;
   const reminders = useLiveQuery(
-    () => currentUserId ? db.reminders.where('userId').equals(currentUserId).toArray() : [],
+    async () => {
+      if (!currentUserId) return [];
+      const all = await db.reminders.toArray();
+      return all.filter(r => 
+        Number(r.targetUserId) === Number(currentUserId) || 
+        Number(r.userId) === Number(currentUserId) || 
+        Number(r.patientId) === Number(currentUserId)
+      );
+    },
     [currentUserId]
   ) || [];
   const sessions = useLiveQuery(
@@ -294,8 +313,19 @@ export default function PatientHome() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             {/* Card 1: Pattern Match */}
             <div 
-              onClick={() => navigate('/patient/games/mekhela')}
-              className="group bg-white dark:bg-[#0F1C23] border border-[#E8E3DA] dark:border-[#1A303A] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:border-[#183C33]/50 dark:hover:border-[#2DD4BF]/50 transition-all cursor-pointer min-h-[270px]"
+              onClick={() => {
+                if (!canAccessAllGames) {
+                  setLockedModal({
+                    isOpen: true,
+                    feature: FEATURE_KEYS.ALL_CULTURAL_GAMES,
+                    title: t('patient.gamePatternTitle') || 'Mekhela Pattern Weaver',
+                    desc: 'Mekhela Pattern Weaver is a Cultural Heritage game. Upgrade to Classic or higher to play.'
+                  });
+                } else {
+                  navigate('/patient/games/mekhela');
+                }
+              }}
+              className="group bg-white dark:bg-[#0F1C23] border border-[#E8E3DA] dark:border-[#1A303A] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:border-[#183C33]/50 dark:hover:border-[#2DD4BF]/50 transition-all cursor-pointer min-h-[270px] relative"
             >
               {/* Artwork Box */}
               <div className="w-full h-32 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-100 dark:from-[#132A26] dark:to-[#0D1C1A] border border-emerald-200/50 dark:border-emerald-900/30 overflow-hidden relative flex items-center justify-center p-3">
@@ -307,6 +337,12 @@ export default function PatientHome() {
                 <div className="relative z-10 w-10 h-10 rounded-xl bg-white/90 dark:bg-[#0F1C23]/90 backdrop-blur-xs flex items-center justify-center shadow-xs">
                   <Grid className="w-5 h-5 text-emerald-700 dark:text-emerald-400" />
                 </div>
+                {!canAccessAllGames && (
+                  <div className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" />
+                    <span>Classic+</span>
+                  </div>
+                )}
               </div>
 
               {/* Meta & Title */}
@@ -314,8 +350,9 @@ export default function PatientHome() {
                 <span className="inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[#E5EFEB] dark:bg-[#122A25] text-[#183C33] dark:text-[#5EEAD4]">
                   {t('patient.gameMemory')}
                 </span>
-                <h3 className="font-serif font-bold text-base text-[#13221E] dark:text-[#F1F5F7] mt-1.5 group-hover:text-[#183C33] dark:group-hover:text-[#2DD4BF] transition-colors">
-                  {t('patient.gamePatternTitle')}
+                <h3 className="font-serif font-bold text-base text-[#13221E] dark:text-[#F1F5F7] mt-1.5 group-hover:text-[#183C33] dark:group-hover:text-[#2DD4BF] transition-colors flex items-center gap-1.5">
+                  <span>{t('patient.gamePatternTitle')}</span>
+                  {!canAccessAllGames && <Lock className="w-3.5 h-3.5 text-amber-500" />}
                 </h3>
                 <p className="text-xs text-[#6B7E77] dark:text-[#8EA19B] mt-1 leading-relaxed">
                   {t('patient.gamePatternDesc')}
@@ -325,15 +362,26 @@ export default function PatientHome() {
               {/* Play Button Row */}
               <div className="pt-3 flex justify-end">
                 <div className="w-9 h-9 rounded-full bg-[#183C33] group-hover:bg-[#132E27] dark:bg-[#2DD4BF] dark:group-hover:bg-[#14B8A6] text-white dark:text-[#091116] flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <Play className="w-4 h-4 ml-0.5 fill-current" />
+                  {!canAccessAllGames ? <Crown className="w-4 h-4 ml-0.5" /> : <Play className="w-4 h-4 ml-0.5 fill-current" />}
                 </div>
               </div>
             </div>
 
             {/* Card 2: Sound of the Hills */}
             <div 
-              onClick={() => navigate('/patient/games/soundshills')}
-              className="group bg-white dark:bg-[#0F1C23] border border-[#E8E3DA] dark:border-[#1A303A] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:border-[#183C33]/50 dark:hover:border-[#2DD4BF]/50 transition-all cursor-pointer min-h-[270px]"
+              onClick={() => {
+                if (!canAccessAllGames) {
+                  setLockedModal({
+                    isOpen: true,
+                    feature: FEATURE_KEYS.ALL_CULTURAL_GAMES,
+                    title: t('patient.gameSoundsTitle') || 'Sounds of the Hills',
+                    desc: 'Sounds of the Hills is a Cultural Heritage auditory game. Upgrade to Classic or higher to play.'
+                  });
+                } else {
+                  navigate('/patient/games/soundshills');
+                }
+              }}
+              className="group bg-white dark:bg-[#0F1C23] border border-[#E8E3DA] dark:border-[#1A303A] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:border-[#183C33]/50 dark:hover:border-[#2DD4BF]/50 transition-all cursor-pointer min-h-[270px] relative"
             >
               {/* Artwork Box */}
               <div className="w-full h-32 rounded-xl bg-gradient-to-br from-teal-50 to-emerald-100 dark:from-[#0E2320] dark:to-[#0B1B18] border border-teal-200/50 dark:border-teal-900/30 overflow-hidden relative flex items-center justify-center p-3">
@@ -344,6 +392,12 @@ export default function PatientHome() {
                 <div className="relative z-10 w-10 h-10 rounded-xl bg-white/90 dark:bg-[#0F1C23]/90 backdrop-blur-xs flex items-center justify-center shadow-xs">
                   <Volume2 className="w-5 h-5 text-teal-700 dark:text-teal-400" />
                 </div>
+                {!canAccessAllGames && (
+                  <div className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" />
+                    <span>Classic+</span>
+                  </div>
+                )}
               </div>
 
               {/* Meta & Title */}
@@ -351,8 +405,9 @@ export default function PatientHome() {
                 <span className="inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-50 dark:bg-[#282110] text-amber-800 dark:text-amber-300">
                   {t('patient.gameAuditory')}
                 </span>
-                <h3 className="font-serif font-bold text-base text-[#13221E] dark:text-[#F1F5F7] mt-1.5 group-hover:text-[#183C33] dark:group-hover:text-[#2DD4BF] transition-colors">
-                  {t('patient.gameSoundsTitle')}
+                <h3 className="font-serif font-bold text-base text-[#13221E] dark:text-[#F1F5F7] mt-1.5 group-hover:text-[#183C33] dark:group-hover:text-[#2DD4BF] transition-colors flex items-center gap-1.5">
+                  <span>{t('patient.gameSoundsTitle')}</span>
+                  {!canAccessAllGames && <Lock className="w-3.5 h-3.5 text-amber-500" />}
                 </h3>
                 <p className="text-xs text-[#6B7E77] dark:text-[#8EA19B] mt-1 leading-relaxed">
                   {t('patient.gameSoundsDesc')}
@@ -362,15 +417,26 @@ export default function PatientHome() {
               {/* Play Button Row */}
               <div className="pt-3 flex justify-end">
                 <div className="w-9 h-9 rounded-full bg-[#183C33] group-hover:bg-[#132E27] dark:bg-[#2DD4BF] dark:group-hover:bg-[#14B8A6] text-white dark:text-[#091116] flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <Play className="w-4 h-4 ml-0.5 fill-current" />
+                  {!canAccessAllGames ? <Crown className="w-4 h-4 ml-0.5" /> : <Play className="w-4 h-4 ml-0.5 fill-current" />}
                 </div>
               </div>
             </div>
 
             {/* Card 3: Bihu Memory / Mind Math */}
             <div 
-              onClick={() => navigate('/patient/games/bihu')}
-              className="group bg-white dark:bg-[#0F1C23] border border-[#E8E3DA] dark:border-[#1A303A] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:border-[#183C33]/50 dark:hover:border-[#2DD4BF]/50 transition-all cursor-pointer min-h-[270px]"
+              onClick={() => {
+                if (!canAccessAllGames) {
+                  setLockedModal({
+                    isOpen: true,
+                    feature: FEATURE_KEYS.ALL_CULTURAL_GAMES,
+                    title: t('patient.gameBihuTitle') || 'Bihu Memory Pairs',
+                    desc: 'Bihu Memory Pairs is a Cultural Heritage memory game. Upgrade to Classic or higher to play.'
+                  });
+                } else {
+                  navigate('/patient/games/bihu');
+                }
+              }}
+              className="group bg-white dark:bg-[#0F1C23] border border-[#E8E3DA] dark:border-[#1A303A] rounded-2xl p-4 sm:p-5 flex flex-col justify-between shadow-xs hover:border-[#183C33]/50 dark:hover:border-[#2DD4BF]/50 transition-all cursor-pointer min-h-[270px] relative"
             >
               {/* Artwork Box */}
               <div className="w-full h-32 rounded-xl bg-gradient-to-br from-indigo-50 to-blue-100 dark:from-[#131B2A] dark:to-[#0D1520] border border-blue-200/50 dark:border-blue-900/30 overflow-hidden relative flex items-center justify-center p-3">
@@ -388,6 +454,12 @@ export default function PatientHome() {
                 <div className="relative z-10 w-10 h-10 rounded-xl bg-white/90 dark:bg-[#0F1C23]/90 backdrop-blur-xs flex items-center justify-center shadow-xs">
                   <Brain className="w-5 h-5 text-indigo-700 dark:text-indigo-400" />
                 </div>
+                {!canAccessAllGames && (
+                  <div className="absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black flex items-center gap-1 shadow-sm">
+                    <Lock className="w-3 h-3" />
+                    <span>Classic+</span>
+                  </div>
+                )}
               </div>
 
               {/* Meta & Title */}
@@ -395,8 +467,9 @@ export default function PatientHome() {
                 <span className="inline-block text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-50 dark:bg-[#12213A] text-blue-800 dark:text-blue-300">
                   {t('patient.gameLogic')}
                 </span>
-                <h3 className="font-serif font-bold text-base text-[#13221E] dark:text-[#F1F5F7] mt-1.5 group-hover:text-[#183C33] dark:group-hover:text-[#2DD4BF] transition-colors">
-                  {t('patient.gameBihuTitle')}
+                <h3 className="font-serif font-bold text-base text-[#13221E] dark:text-[#F1F5F7] mt-1.5 group-hover:text-[#183C33] dark:group-hover:text-[#2DD4BF] transition-colors flex items-center gap-1.5">
+                  <span>{t('patient.gameBihuTitle')}</span>
+                  {!canAccessAllGames && <Lock className="w-3.5 h-3.5 text-amber-500" />}
                 </h3>
                 <p className="text-xs text-[#6B7E77] dark:text-[#8EA19B] mt-1 leading-relaxed">
                   {t('patient.gameBihuDesc')}
@@ -406,7 +479,7 @@ export default function PatientHome() {
               {/* Play Button Row */}
               <div className="pt-3 flex justify-end">
                 <div className="w-9 h-9 rounded-full bg-[#183C33] group-hover:bg-[#132E27] dark:bg-[#2DD4BF] dark:group-hover:bg-[#14B8A6] text-white dark:text-[#091116] flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                  <Play className="w-4 h-4 ml-0.5 fill-current" />
+                  {!canAccessAllGames ? <Crown className="w-4 h-4 ml-0.5" /> : <Play className="w-4 h-4 ml-0.5 fill-current" />}
                 </div>
               </div>
             </div>
@@ -503,6 +576,15 @@ export default function PatientHome() {
       <EmergencyCallModal
         isOpen={showCallModal}
         onClose={() => setShowCallModal(false)}
+      />
+
+      {/* Plan-Locked Feature Modal */}
+      <FeatureLockedModal
+        isOpen={lockedModal.isOpen}
+        onClose={() => setLockedModal(prev => ({ ...prev, isOpen: false }))}
+        feature={lockedModal.feature}
+        title={lockedModal.title}
+        description={lockedModal.desc}
       />
     </div>
   );

@@ -1,7 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { db, seedDatabaseIfEmpty, initializeDatabase } from '../db/dexie';
+import { db, seedDatabaseIfEmpty, initializeDatabase, ensureDemoUsers } from '../db/dexie';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { setAppMode } from '../config/appMode';
+
+export function normalizeRole(role) {
+  if (!role) return 'caregiver';
+  const r = String(role).trim().toLowerCase();
+  if (r === 'clinician' || r === 'healthcare_worker' || r === 'healthcare-worker' || r === 'healthcare-professional' || r === 'doctor') {
+    return 'healthcare';
+  }
+  return r;
+}
 
 const AuthContext = createContext();
 
@@ -23,7 +32,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Helper to synchronize a Supabase OAuth session user with Dexie DB and create local session
+  // Helper to synchronize a Supabase OAuth session user with server & Dexie DB
   const syncSupabaseSessionToDexie = async (supaUser) => {
     if (!supaUser) return null;
     const email = supaUser.email?.toLowerCase();
@@ -32,56 +41,124 @@ export function AuthProvider({ children }) {
     const targetRole = localStorage.getItem('smriti_oauth_role') || 'caregiver';
     localStorage.removeItem('smriti_oauth_role');
 
-    await initializeDatabase();
-    let existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
-    const now = new Date().toISOString();
+    // 1. First try server verification to enforce role isolation
+    try {
+      const srvRes = await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, avatar, targetRole })
+      });
+      const srvData = await srvRes.json();
+      if (!srvRes.ok || !srvData.success) {
+        throw new Error(srvData.error || 'Google authentication was rejected for this role.');
+      }
 
-    if (!existingUser) {
-      const userRecord = {
-        name,
-        email,
-        role: targetRole,
-        passwordHash: '',
-        avatar,
-        profileImage: avatar,
-        location: 'Assam, India',
-        relation: targetRole === 'caregiver' ? 'Family Caregiver' : '',
-        designation: targetRole === 'healthcare' ? 'Healthcare Professional' : '',
-        isDemo: false,
-        isVerified: true,
-        status: 'active',
-        lastLoginAt: now,
-        createdAt: now,
-        updatedAt: now
-      };
-      const newId = await db.users.add(userRecord);
-      existingUser = { id: newId, ...userRecord };
-    } else {
-      const updates = { lastLoginAt: now, updatedAt: now };
-      if (!existingUser.profileImage && avatar) updates.profileImage = avatar;
-      if (!existingUser.name && name) updates.name = name;
-      await db.users.update(existingUser.id, updates);
-      existingUser = { ...existingUser, ...updates };
+      const verifiedUser = srvData.user;
+      const sessionToken = srvData.sessionToken;
+
+      await initializeDatabase();
+      let existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
+      const now = new Date().toISOString();
+
+      if (!existingUser) {
+        const userRecord = {
+          ...verifiedUser,
+          passwordHash: '',
+          profileImage: avatar,
+          status: 'active',
+          lastLoginAt: now,
+          createdAt: now,
+          updatedAt: now
+        };
+        const newId = await db.users.add(userRecord);
+        existingUser = { id: newId, ...userRecord };
+      } else {
+        const updates = { lastLoginAt: now, updatedAt: now };
+        if (!existingUser.profileImage && avatar) updates.profileImage = avatar;
+        if (!existingUser.name && name) updates.name = name;
+        await db.users.update(existingUser.id, updates);
+        existingUser = { ...existingUser, ...updates };
+      }
+
+      await db.sessions.add({
+        userId: existingUser.id,
+        token: sessionToken,
+        expiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+        createdAt: now
+      });
+
+      localStorage.setItem('smriti_session_token', sessionToken);
+      localStorage.setItem('smriti_user_id', String(existingUser.id));
+      localStorage.setItem('smriti_user', JSON.stringify(existingUser));
+      setAppMode('production');
+
+      return existingUser;
+    } catch (err) {
+      console.warn('Server OAuth sync notice:', err.message);
+      // If error is explicit role mismatch rejection, rethrow
+      if (err.message.includes('registered as') || err.message.includes('Access Denied')) {
+        throw err;
+      }
+
+      // Offline fallback: Validate in Dexie
+      await initializeDatabase();
+      let existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
+    const normalizedTarget = normalizeRole(targetRole);
+      const now = new Date().toISOString();
+
+      if (existingUser && existingUser.role !== normalizedTarget) {
+        const currentRoleName = existingUser.role === 'healthcare' ? 'Healthcare Worker' : existingUser.role.charAt(0).toUpperCase() + existingUser.role.slice(1);
+        const targetRoleName = normalizedTarget === 'healthcare' ? 'Healthcare Worker' : normalizedTarget.charAt(0).toUpperCase() + normalizedTarget.slice(1);
+        throw new Error(`Access Denied: This Google account is registered as a ${currentRoleName}, not a ${targetRoleName}. Please sign in via ${currentRoleName} login.`);
+      }
+
+      if (!existingUser) {
+        const userRecord = {
+          name,
+          email,
+          role: normalizedTarget,
+          passwordHash: '',
+          avatar,
+          profileImage: avatar,
+          location: 'Assam, India',
+          relation: normalizedTarget === 'caregiver' ? 'Family Caregiver' : '',
+          designation: normalizedTarget === 'healthcare' ? 'Healthcare Professional' : '',
+          isDemo: false,
+          isVerified: true,
+          status: 'active',
+          lastLoginAt: now,
+          createdAt: now,
+          updatedAt: now
+        };
+        const newId = await db.users.add(userRecord);
+        existingUser = { id: newId, ...userRecord };
+      } else {
+        const updates = { lastLoginAt: now, updatedAt: now };
+        if (!existingUser.profileImage && avatar) updates.profileImage = avatar;
+        if (!existingUser.name && name) updates.name = name;
+        await db.users.update(existingUser.id, updates);
+        existingUser = { ...existingUser, ...updates };
+      }
+
+      const sessionToken = `sess_oauth_${existingUser.id}_${Date.now()}`;
+      const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+      await db.sessions.add({
+        userId: existingUser.id,
+        token: sessionToken,
+        expiresAt,
+        createdAt: now
+      });
+
+      localStorage.setItem('smriti_session_token', sessionToken);
+      localStorage.setItem('smriti_user_id', String(existingUser.id));
+      localStorage.setItem('smriti_user', JSON.stringify(existingUser));
+      setAppMode('production');
+
+      return existingUser;
     }
-
-    const sessionToken = `sess_oauth_${existingUser.id}_${Date.now()}`;
-    const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
-    await db.sessions.add({
-      userId: existingUser.id,
-      token: sessionToken,
-      expiresAt,
-      createdAt: now
-    });
-
-    localStorage.setItem('smriti_session_token', sessionToken);
-    localStorage.setItem('smriti_user_id', String(existingUser.id));
-    localStorage.setItem('smriti_user', JSON.stringify(existingUser));
-    setAppMode('production');
-
-    return existingUser;
   };
 
-  // App startup: Initialize Dexie, seed if completely empty, and restore active session
+  // App startup: Initialize database & verify/restore active session
   useEffect(() => {
     let isMounted = true;
     let authSubscription = null;
@@ -98,7 +175,7 @@ export function AuthProvider({ children }) {
                 setIsLoading(false);
               }
             } catch (authSyncErr) {
-              console.warn('Failed to sync auth state change to Dexie:', authSyncErr);
+              console.warn('Failed to sync auth state change:', authSyncErr);
             }
           }
         });
@@ -111,10 +188,8 @@ export function AuthProvider({ children }) {
     async function initAndRestoreSession() {
       try {
         await initializeDatabase();
-        // NOTE: seedDatabaseIfEmpty() is explicitly decoupled from startup.
-        // It runs ONLY when the user clicks 'Try Demo' to preserve honest 0-state.
 
-        // 0. Attempt Supabase OAuth session restoration if redirected back from Google OAuth
+        // 0. Attempt Supabase OAuth session restoration if redirected back
         if (isSupabaseConfigured() && supabase) {
           try {
             const { data: { session: supaSession } } = await supabase.auth.getSession();
@@ -131,9 +206,28 @@ export function AuthProvider({ children }) {
           }
         }
 
-        // 1. Attempt session restoration using session token from IndexedDB
+        // 1. Verify session token with backend API
         const savedToken = localStorage.getItem('smriti_session_token');
         if (savedToken) {
+          try {
+            const res = await fetch('/api/auth/verify-session', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sessionToken: savedToken })
+            });
+            if (res.ok) {
+              const data = await res.json();
+              if (data.success && data.user && isMounted) {
+                setCurrentUser(data.user);
+                setIsLoading(false);
+                return;
+              }
+            }
+          } catch {
+            // Server offline, fall through to Dexie verification
+          }
+
+          // Dexie session verification
           const session = await db.sessions.where('token').equals(savedToken).first();
           if (session && new Date(session.expiresAt) > new Date()) {
             const user = await db.users.get(session.userId);
@@ -143,12 +237,13 @@ export function AuthProvider({ children }) {
               return;
             }
           }
+
           // Expired or invalid session
           localStorage.removeItem('smriti_session_token');
           localStorage.removeItem('smriti_user_id');
         }
 
-        // 2. Fallback restoration using persisted user ID
+        // 2. Fallback restoration using persisted user ID if verified in Dexie
         const savedUserId = localStorage.getItem('smriti_user_id');
         if (savedUserId) {
           const user = await db.users.get(Number(savedUserId));
@@ -159,7 +254,7 @@ export function AuthProvider({ children }) {
           }
         }
 
-        // 3. Fallback from cached user JSON if verified against IndexedDB
+        // 3. Fallback from cached user JSON if verified against Dexie
         const savedUserJson = localStorage.getItem('smriti_user');
         if (savedUserJson) {
           try {
@@ -200,7 +295,7 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  // REGISTER NEW USER FLOW
+  // REGISTER NEW USER FLOW (Server API + Dexie Sync)
   const register = async ({
     name,
     email,
@@ -228,36 +323,52 @@ export function AuthProvider({ children }) {
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedRole = normalizeRole(role);
 
+    // 2. Try Server Registration First
     try {
-      await initializeDatabase();
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: normalizedEmail,
+          password,
+          role: normalizedRole,
+          pin,
+          age,
+          location,
+          phone,
+          relation,
+          designation
+        })
+      });
 
-      // 2. Check for duplicate email in Dexie
-      const existing = await db.users.where('email').equalsIgnoreCase(normalizedEmail).first();
-      if (existing) {
-        return { success: false, error: 'An account with this email already exists. Please sign in.' };
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        return { success: false, error: data.error || 'Registration failed.' };
       }
 
-      // 3. Hash password
+      // Sync registered user to local Dexie
+      await initializeDatabase();
       const passwordHash = await hashPassword(password);
       const now = new Date().toISOString();
 
-      // 4. Dexie transaction: write user, profile, session, syncQueue
-      const result = await db.transaction('rw', [db.users, db.patientProfiles, db.sessions, db.syncQueue], async () => {
-        // Create user
+      let localUser = await db.users.where('email').equalsIgnoreCase(normalizedEmail).first();
+      if (!localUser) {
         const userRecord = {
-          name: name.trim(),
-          email: normalizedEmail,
-          role,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
           passwordHash,
-          pin: pin || (role === 'patient' ? '1234' : undefined),
+          pin: pin || (normalizedRole === 'patient' ? '1234' : undefined),
           avatar: null,
           profileImage: null,
-          age: age ? Number(age) : (role === 'patient' ? 74 : undefined),
+          age: age ? Number(age) : (normalizedRole === 'patient' ? 74 : undefined),
           location,
           phone,
-          relation: relation || (role === 'caregiver' ? 'Family Caregiver' : ''),
-          designation: designation || (role === 'healthcare' ? 'PHC Medical Officer' : ''),
+          relation: relation || (normalizedRole === 'caregiver' ? 'Family Caregiver' : ''),
+          designation: designation || (normalizedRole === 'healthcare' ? 'PHC Medical Officer' : ''),
           isDemo: false,
           isVerified: true,
           status: 'active',
@@ -265,168 +376,321 @@ export function AuthProvider({ children }) {
           createdAt: now,
           updatedAt: now
         };
+        const newId = await db.users.add(userRecord);
+        localUser = { id: newId, ...userRecord };
+      }
 
-        const userId = await db.users.add(userRecord);
-        const newUser = { id: userId, ...userRecord };
-
-        // If registering patient, create patientProfile
-        if (role === 'patient') {
-          await db.patientProfiles.add({
-            userId,
-            isDemo: false,
-            name: newUser.name,
-            age: newUser.age || 74,
-            location: newUser.location,
-            phcCenter: 'Titabar PHC, Assam',
-            createdAt: now,
-            updatedAt: now
-          });
-        }
-
-        // Create active session in db.sessions
-        const sessionToken = `sess_${userId}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-        const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
-
-        await db.sessions.add({
-          userId,
-          token: sessionToken,
-          expiresAt,
-          createdAt: now
-        });
-
-        // Add user creation to syncQueue
-        await db.syncQueue.add({
-          userId,
-          patientId: role === 'patient' ? userId : null,
-          isDemo: false,
-          entityType: 'users',
-          entityId: userId,
-          operation: 'INSERT',
-          status: 'pending',
-          createdAt: now,
-          retryCount: 0,
-          // backward compatibility
-          tableName: 'users',
-          recordId: userId,
-          action: 'INSERT'
-        });
-
-        return { newUser, sessionToken };
-      });
-
-      // 5. Persist session
-      localStorage.setItem('smriti_session_token', result.sessionToken);
-      localStorage.setItem('smriti_user_id', String(result.newUser.id));
-      localStorage.setItem('smriti_user', JSON.stringify(result.newUser));
+      localStorage.setItem('smriti_session_token', data.sessionToken);
+      localStorage.setItem('smriti_user_id', String(localUser.id || data.user.id));
+      localStorage.setItem('smriti_user', JSON.stringify(localUser));
       setAppMode('production');
 
-      // 6. Set React state
-      setCurrentUser(result.newUser);
+      setCurrentUser(localUser);
+      console.log(`✅ User registered via server: ${data.user.name} (${data.user.email})`);
+      return { success: true, user: localUser };
+    } catch (serverErr) {
+      console.warn('Server registration unavailable, falling back to local Dexie:', serverErr.message);
 
-      console.log(`✅ Real User registered and saved to IndexedDB: ${result.newUser.name} (#${result.newUser.id}) [isVerified=true]`);
-      return { success: true, user: result.newUser };
-    } catch (err) {
-      console.error('❌ Registration failed:', err);
-      return { success: false, error: err.message || 'Registration failed. Please try again.' };
+      // Offline Dexie Registration Fallback
+      try {
+        await initializeDatabase();
+        const existing = await db.users.where('email').equalsIgnoreCase(normalizedEmail).first();
+        if (existing) {
+          return { success: false, error: 'An account with this email already exists. Please sign in.' };
+        }
+
+        const passwordHash = await hashPassword(password);
+        const now = new Date().toISOString();
+
+        const result = await db.transaction('rw', [db.users, db.patientProfiles, db.sessions, db.syncQueue], async () => {
+          const userRecord = {
+            name: name.trim(),
+            email: normalizedEmail,
+            role: normalizedRole,
+            passwordHash,
+            pin: pin || (normalizedRole === 'patient' ? '1234' : undefined),
+            avatar: null,
+            profileImage: null,
+            age: age ? Number(age) : (normalizedRole === 'patient' ? 74 : undefined),
+            location,
+            phone,
+            relation: relation || (normalizedRole === 'caregiver' ? 'Family Caregiver' : ''),
+            designation: designation || (normalizedRole === 'healthcare' ? 'PHC Medical Officer' : ''),
+            isDemo: false,
+            isVerified: true,
+            status: 'active',
+            lastLoginAt: now,
+            createdAt: now,
+            updatedAt: now
+          };
+
+          const userId = await db.users.add(userRecord);
+          const newUser = { id: userId, ...userRecord };
+
+          if (normalizedRole === 'patient') {
+            await db.patientProfiles.add({
+              userId,
+              isDemo: false,
+              name: newUser.name,
+              age: newUser.age || 74,
+              location: newUser.location,
+              phcCenter: 'Titabar PHC, Assam',
+              createdAt: now,
+              updatedAt: now
+            });
+          }
+
+          const sessionToken = `sess_${userId}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+          const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+
+          await db.sessions.add({
+            userId,
+            token: sessionToken,
+            expiresAt,
+            createdAt: now
+          });
+
+          return { newUser, sessionToken };
+        });
+
+        localStorage.setItem('smriti_session_token', result.sessionToken);
+        localStorage.setItem('smriti_user_id', String(result.newUser.id));
+        localStorage.setItem('smriti_user', JSON.stringify(result.newUser));
+        setAppMode('production');
+
+        setCurrentUser(result.newUser);
+        return { success: true, user: result.newUser };
+      } catch (err) {
+        console.error('❌ Dexie registration failed:', err);
+        return { success: false, error: err.message || 'Registration failed. Please try again.' };
+      }
     }
   };
 
-  // LOGIN WITH EMAIL FLOW
-  const loginWithEmail = async (email, password) => {
+  // LOGIN WITH EMAIL FLOW (Strict Target Role Verification)
+  const loginWithEmail = async (email, password, targetRole = 'caregiver') => {
     if (!email || !password) {
       return { success: false, error: 'Please enter both email and password.' };
     }
 
     const normalizedEmail = email.trim().toLowerCase();
+    const normalizedTarget = normalizeRole(targetRole);
 
+    // 1. Try Server-Side Authentication & Authorization
     try {
-      await initializeDatabase();
-      const user = await db.users.where('email').equalsIgnoreCase(normalizedEmail).first();
-
-      if (!user) {
-        return { success: false, error: 'No account found with this email. Please sign up.' };
-      }
-
-      // Verify password
-      const inputHash = await hashPassword(password);
-      const isPasswordValid =
-        user.passwordHash === inputHash ||
-        user.passwordHash === password ||
-        (user.passwordHash === 'demo123' && password === 'demo123');
-
-      if (!isPasswordValid) {
-        return { success: false, error: 'Incorrect password. Please try again.' };
-      }
-
-      // Update lastLoginAt
-      const now = new Date().toISOString();
-      await db.users.update(user.id, { lastLoginAt: now, updatedAt: now });
-      user.lastLoginAt = now;
-
-      // Create session
-      const sessionToken = `sess_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-      const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
-
-      await db.sessions.add({
-        userId: user.id,
-        token: sessionToken,
-        expiresAt,
-        createdAt: now
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          password,
+          targetRole: normalizedTarget
+        })
       });
 
-      localStorage.setItem('smriti_session_token', sessionToken);
-      localStorage.setItem('smriti_user_id', String(user.id));
-      localStorage.setItem('smriti_user', JSON.stringify(user));
-      setAppMode(user.isDemo ? 'demo' : 'production');
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        return { success: false, error: data.error || 'Authentication failed.' };
+      }
 
-      setCurrentUser(user);
-      console.log(`✅ Logged in as: ${user.name} (#${user.id})`);
-      return { success: true, user };
-    } catch (err) {
-      console.error('❌ Login error:', err);
-      return { success: false, error: err.message || 'Login failed. Please try again.' };
+      // Sync authenticated user to local Dexie
+      await initializeDatabase();
+      let localUser = await db.users.where('email').equalsIgnoreCase(normalizedEmail).first();
+      const now = new Date().toISOString();
+
+      if (!localUser) {
+        const userRecord = {
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role,
+          passwordHash: await hashPassword(password),
+          pin: data.user.pin,
+          avatar: data.user.avatar || null,
+          profileImage: data.user.profileImage || null,
+          location: data.user.location || 'Assam, India',
+          relation: data.user.relation || '',
+          designation: data.user.designation || '',
+          isDemo: false,
+          isVerified: true,
+          status: 'active',
+          lastLoginAt: now,
+          createdAt: now,
+          updatedAt: now
+        };
+        const newId = await db.users.add(userRecord);
+        localUser = { id: newId, ...userRecord };
+      } else {
+        await db.users.update(localUser.id, { lastLoginAt: now, updatedAt: now });
+        localUser = { ...localUser, lastLoginAt: now, updatedAt: now };
+      }
+
+      localStorage.setItem('smriti_session_token', data.sessionToken);
+      localStorage.setItem('smriti_user_id', String(localUser.id || data.user.id));
+      localStorage.setItem('smriti_user', JSON.stringify(localUser));
+      setAppMode(localUser.isDemo ? 'demo' : 'production');
+
+      setCurrentUser(localUser);
+      console.log(`✅ Authenticated via server: ${localUser.name} [role: ${localUser.role}]`);
+      return { success: true, user: localUser };
+    } catch (serverErr) {
+      console.warn('Server auth endpoint unavailable, falling back to local Dexie:', serverErr.message);
+
+      // Offline Dexie Verification Fallback
+      try {
+        await initializeDatabase();
+        const user = await db.users.where('email').equalsIgnoreCase(normalizedEmail).first();
+
+        if (!user) {
+          return { success: false, error: 'No account found with this email address. Please sign up.' };
+        }
+
+        // STRICT ROLE ENFORCEMENT
+        if (normalizedTarget && user.role !== normalizedTarget) {
+          const currentRoleName = user.role === 'healthcare' ? 'Healthcare Worker' : user.role.charAt(0).toUpperCase() + user.role.slice(1);
+          const targetRoleName = normalizedTarget === 'healthcare' ? 'Healthcare Worker' : normalizedTarget.charAt(0).toUpperCase() + normalizedTarget.slice(1);
+          return {
+            success: false,
+            error: `Access Denied: This account is registered as a ${currentRoleName}, not a ${targetRoleName}. Please sign in via the ${currentRoleName} login screen.`
+          };
+        }
+
+        // Verify password
+        const inputHash = await hashPassword(password);
+        const isPasswordValid =
+          user.passwordHash === inputHash ||
+          user.passwordHash === password ||
+          (user.passwordHash === 'demo123' && password === 'demo123');
+
+        if (!isPasswordValid) {
+          return { success: false, error: 'Incorrect password. Please verify and try again.' };
+        }
+
+        const now = new Date().toISOString();
+        await db.users.update(user.id, { lastLoginAt: now, updatedAt: now });
+        user.lastLoginAt = now;
+
+        const sessionToken = `sess_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+
+        await db.sessions.add({
+          userId: user.id,
+          token: sessionToken,
+          expiresAt,
+          createdAt: now
+        });
+
+        localStorage.setItem('smriti_session_token', sessionToken);
+        localStorage.setItem('smriti_user_id', String(user.id));
+        localStorage.setItem('smriti_user', JSON.stringify(user));
+        setAppMode(user.isDemo ? 'demo' : 'production');
+
+        setCurrentUser(user);
+        return { success: true, user };
+      } catch (err) {
+        console.error('❌ Dexie login error:', err);
+        return { success: false, error: err.message || 'Login failed. Please try again.' };
+      }
     }
   };
 
-  // LOGIN WITH PIN FLOW (Patient)
-  const loginWithPin = async (enteredPin) => {
+  // LOGIN WITH PIN FLOW (Patient Senior Access)
+  const loginWithPin = async (enteredPin, targetRole = 'patient') => {
     if (!enteredPin || enteredPin.length !== 4) {
-      return { success: false, error: 'Please enter a 4-digit PIN.' };
+      return { success: false, error: 'Please enter a 4-digit numeric PIN.' };
     }
 
+    // 1. Try Server-Side PIN Authentication
     try {
-      await initializeDatabase();
-      const patients = await db.users.where('role').equals('patient').toArray();
-      const user = patients.find((p) => p.pin === enteredPin);
-
-      if (!user) {
-        return { success: false, error: 'Incorrect PIN. Try 1234 or tap instant demo.' };
-      }
-
-      const now = new Date().toISOString();
-      await db.users.update(user.id, { lastLoginAt: now, updatedAt: now });
-      user.lastLoginAt = now;
-
-      const sessionToken = `sess_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
-      const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
-
-      await db.sessions.add({
-        userId: user.id,
-        token: sessionToken,
-        expiresAt,
-        createdAt: now
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          pin: String(enteredPin).trim(),
+          targetRole: 'patient'
+        })
       });
 
-      localStorage.setItem('smriti_session_token', sessionToken);
-      localStorage.setItem('smriti_user_id', String(user.id));
-      localStorage.setItem('smriti_user', JSON.stringify(user));
-      setAppMode(user.isDemo ? 'demo' : 'production');
+      const data = await response.json();
+      if (!response.ok || !data.success) {
+        return { success: false, error: data.error || 'Incorrect PIN. Try 1234 or tap instant demo.' };
+      }
 
-      setCurrentUser(user);
-      return { success: true, user };
-    } catch (err) {
-      console.error('❌ PIN login error:', err);
-      return { success: false, error: 'PIN login failed. Please try again.' };
+      // Sync authenticated patient to local Dexie
+      await initializeDatabase();
+      let localUser = await db.users.where('email').equalsIgnoreCase(data.user.email).first();
+      const now = new Date().toISOString();
+
+      if (!localUser) {
+        const userRecord = {
+          name: data.user.name,
+          email: data.user.email,
+          role: 'patient',
+          passwordHash: '',
+          pin: String(enteredPin).trim(),
+          avatar: data.user.avatar || null,
+          profileImage: data.user.profileImage || null,
+          age: data.user.age || 74,
+          location: data.user.location || 'Assam, India',
+          isDemo: false,
+          isVerified: true,
+          status: 'active',
+          lastLoginAt: now,
+          createdAt: now,
+          updatedAt: now
+        };
+        const newId = await db.users.add(userRecord);
+        localUser = { id: newId, ...userRecord };
+      } else {
+        await db.users.update(localUser.id, { lastLoginAt: now, updatedAt: now });
+        localUser = { ...localUser, lastLoginAt: now, updatedAt: now };
+      }
+
+      localStorage.setItem('smriti_session_token', data.sessionToken);
+      localStorage.setItem('smriti_user_id', String(localUser.id || data.user.id));
+      localStorage.setItem('smriti_user', JSON.stringify(localUser));
+      setAppMode(localUser.isDemo ? 'demo' : 'production');
+
+      setCurrentUser(localUser);
+      console.log(`✅ Patient PIN authenticated via server: ${localUser.name}`);
+      return { success: true, user: localUser };
+    } catch (serverErr) {
+      console.warn('Server PIN auth unavailable, falling back to local Dexie:', serverErr.message);
+
+      // Offline Dexie Verification Fallback
+      try {
+        await initializeDatabase();
+        const patients = await db.users.where('role').equals('patient').toArray();
+        const user = patients.find((p) => p.pin === enteredPin);
+
+        if (!user) {
+          return { success: false, error: 'Incorrect PIN. Try 1234 or tap instant demo.' };
+        }
+
+        const now = new Date().toISOString();
+        await db.users.update(user.id, { lastLoginAt: now, updatedAt: now });
+        user.lastLoginAt = now;
+
+        const sessionToken = `sess_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+        const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+
+        await db.sessions.add({
+          userId: user.id,
+          token: sessionToken,
+          expiresAt,
+          createdAt: now
+        });
+
+        localStorage.setItem('smriti_session_token', sessionToken);
+        localStorage.setItem('smriti_user_id', String(user.id));
+        localStorage.setItem('smriti_user', JSON.stringify(user));
+        setAppMode(user.isDemo ? 'demo' : 'production');
+
+        setCurrentUser(user);
+        return { success: true, user };
+      } catch (err) {
+        console.error('❌ PIN login error:', err);
+        return { success: false, error: 'PIN login failed. Please try again.' };
+      }
     }
   };
 
@@ -452,6 +716,19 @@ export function AuthProvider({ children }) {
             const email = googleUser.email?.toLowerCase();
             const name = googleUser.name || email?.split('@')[0] || 'User';
             const avatar = googleUser.picture || null;
+          const normalizedTarget = normalizeRole(targetRole);
+
+            // Enforce role isolation via server
+            const srvRes = await fetch('/api/auth/google', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email, name, avatar, targetRole: normalizedTarget })
+            });
+            const srvData = await srvRes.json();
+            if (!srvRes.ok || !srvData.success) {
+              resolve({ success: false, error: srvData.error || 'Google authentication was rejected.' });
+              return;
+            }
 
             await initializeDatabase();
             let existingUser = await db.users.where('email').equalsIgnoreCase(email).first();
@@ -461,13 +738,13 @@ export function AuthProvider({ children }) {
               const userRecord = {
                 name,
                 email,
-                role: targetRole,
+                role: normalizedTarget,
                 passwordHash: '',
                 avatar,
                 profileImage: avatar,
                 location: 'Assam, India',
-                relation: targetRole === 'caregiver' ? 'Family Caregiver' : '',
-                designation: targetRole === 'healthcare' ? 'Healthcare Professional' : '',
+                relation: normalizedTarget === 'caregiver' ? 'Family Caregiver' : '',
+                designation: normalizedTarget === 'healthcare' ? 'Healthcare Professional' : '',
                 isDemo: false,
                 isVerified: true,
                 status: 'active',
@@ -485,16 +762,7 @@ export function AuthProvider({ children }) {
               existingUser = { ...existingUser, ...updates };
             }
 
-            const sessionToken = `sess_gis_${existingUser.id}_${Date.now()}`;
-            const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
-            await db.sessions.add({
-              userId: existingUser.id,
-              token: sessionToken,
-              expiresAt,
-              createdAt: now
-            });
-
-            localStorage.setItem('smriti_session_token', sessionToken);
+            localStorage.setItem('smriti_session_token', srvData.sessionToken);
             localStorage.setItem('smriti_user_id', String(existingUser.id));
             localStorage.setItem('smriti_user', JSON.stringify(existingUser));
             setAppMode('production');
@@ -587,18 +855,47 @@ export function AuthProvider({ children }) {
   const loginDemo = async (role) => {
     try {
       await initializeDatabase();
+      await ensureDemoUsers();
       await seedDatabaseIfEmpty();
 
-      const user = await db.users.where('role').equals(role).first();
+      const normalizedRole = normalizeRole(role);
+      let user = await db.users.where('role').equals(normalizedRole).first();
+
+      // Fallback lookups by email or alias
+      if (!user && normalizedRole === 'healthcare') {
+        user = await db.users.where('email').equalsIgnoreCase('phukan@health.assam.gov.in').first();
+      }
+      if (!user && normalizedRole === 'patient') {
+        user = await db.users.where('email').equalsIgnoreCase('amma@smriticare.org').first();
+      }
+      if (!user && normalizedRole === 'caregiver') {
+        user = await db.users.where('email').equalsIgnoreCase('priya@smriticare.org').first();
+      }
+      if (!user) {
+        const aliases = normalizedRole === 'healthcare'
+          ? ['healthcare', 'clinician', 'healthcare_worker', 'healthcare-professional', 'doctor']
+          : [normalizedRole];
+        user = await db.users.where('role').anyOf(aliases).first();
+      }
+
       if (!user) {
         throw new Error(`Demo user for role "${role}" not found in database.`);
       }
+
+      // Session isolation: clean up previous session token
+      const oldToken = localStorage.getItem('smriti_session_token');
+      if (oldToken) {
+        try {
+          await db.sessions.where('token').equals(oldToken).delete();
+        } catch {}
+      }
+      localStorage.removeItem('smriti_selected_patient_id');
 
       const now = new Date().toISOString();
       await db.users.update(user.id, { lastLoginAt: now, updatedAt: now });
       user.lastLoginAt = now;
 
-      const sessionToken = `sess_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      const sessionToken = `sess_demo_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
       const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
 
       await db.sessions.add({
@@ -621,10 +918,89 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // CONTINUOUS ROLE SWITCH FLOW (Switches to the dedicated account for that role)
+  const loginContinuous = async (targetRole) => {
+    try {
+      await initializeDatabase();
+      await ensureDemoUsers();
+      await seedDatabaseIfEmpty();
+
+      const normalizedRole = normalizeRole(targetRole);
+      let user = await db.users.where('role').equals(normalizedRole).first();
+
+      // Fallback lookups
+      if (!user && normalizedRole === 'healthcare') {
+        user = await db.users.where('email').equalsIgnoreCase('phukan@health.assam.gov.in').first();
+      }
+      if (!user && normalizedRole === 'patient') {
+        user = await db.users.where('email').equalsIgnoreCase('amma@smriticare.org').first();
+      }
+      if (!user && normalizedRole === 'caregiver') {
+        user = await db.users.where('email').equalsIgnoreCase('priya@smriticare.org').first();
+      }
+      if (!user) {
+        const aliases = normalizedRole === 'healthcare'
+          ? ['healthcare', 'clinician', 'healthcare_worker', 'healthcare-professional', 'doctor']
+          : [normalizedRole];
+        user = await db.users.where('role').anyOf(aliases).first();
+      }
+
+      if (!user) {
+        throw new Error(`Dedicated account for continuous role "${targetRole}" not found in database.`);
+      }
+
+      const oldToken = localStorage.getItem('smriti_session_token');
+      if (oldToken) {
+        try {
+          await db.sessions.where('token').equals(oldToken).delete();
+        } catch (delErr) {
+          console.warn('Old session cleanup note:', delErr);
+        }
+      }
+
+      localStorage.removeItem('smriti_selected_patient_id');
+
+      const now = new Date().toISOString();
+      await db.users.update(user.id, { lastLoginAt: now, updatedAt: now });
+      user.lastLoginAt = now;
+
+      const sessionToken = `sess_cont_${user.id}_${Date.now()}_${Math.random().toString(36).substring(2, 10)}`;
+      const expiresAt = new Date(Date.now() + 30 * 86400000).toISOString();
+
+      await db.sessions.add({
+        userId: user.id,
+        token: sessionToken,
+        expiresAt,
+        createdAt: now
+      });
+
+      localStorage.setItem('smriti_session_token', sessionToken);
+      localStorage.setItem('smriti_user_id', String(user.id));
+      localStorage.setItem('smriti_user', JSON.stringify(user));
+      setAppMode(user.isDemo ? 'demo' : 'continuous');
+
+      setCurrentUser(user);
+      console.log(`✅ Switched to Continuous Account: ${user.name} (#${user.id}, role: ${user.role})`);
+      return user;
+    } catch (err) {
+      console.error('❌ Continuous login error:', err);
+      throw err;
+    }
+  };
+
   // LOGOUT FLOW
   const logout = async () => {
     const token = localStorage.getItem('smriti_session_token');
     if (token) {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionToken: token })
+        });
+      } catch {
+        // Server logout best effort
+      }
       try {
         await db.sessions.where('token').equals(token).delete();
       } catch (err) {
@@ -632,10 +1008,19 @@ export function AuthProvider({ children }) {
       }
     }
 
+    if (isSupabaseConfigured() && supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (supaSignOutErr) {
+        console.warn('Supabase sign out notice:', supaSignOutErr);
+      }
+    }
+
     localStorage.removeItem('smriti_session_token');
     localStorage.removeItem('smriti_user_id');
     localStorage.removeItem('smriti_user');
     localStorage.removeItem('smriti_selected_patient_id');
+    localStorage.removeItem('smriti_oauth_role');
     setCurrentUser(null);
   };
 
@@ -660,7 +1045,6 @@ export function AuthProvider({ children }) {
 
       await db.users.update(currentUser.id, sanitizedUpdates);
 
-      // If patient, also update patientProfiles table
       if (currentUser.role === 'patient') {
         const patientProfile = await db.patientProfiles.where('userId').equals(currentUser.id).first();
         if (patientProfile) {
@@ -671,19 +1055,6 @@ export function AuthProvider({ children }) {
           await db.patientProfiles.update(patientProfile.id, profileUpdates);
         }
       }
-
-      // Add to syncQueue for cloud replication
-      await db.syncQueue.add({
-        userId: currentUser.id,
-        patientId: currentUser.role === 'patient' ? currentUser.id : null,
-        isDemo: !!currentUser.isDemo,
-        entityType: 'users',
-        entityId: currentUser.id,
-        operation: 'UPDATE',
-        status: 'pending',
-        createdAt: now,
-        retryCount: 0
-      });
 
       const updatedUser = { ...currentUser, ...sanitizedUpdates };
       localStorage.setItem('smriti_user', JSON.stringify(updatedUser));
@@ -696,7 +1067,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // REMOVE PROFILE PHOTO (Reverts back to clean initials fallback)
+  // REMOVE PROFILE PHOTO
   const removeProfilePhoto = async () => {
     if (!currentUser?.id) {
       return { success: false, error: 'No user is currently authenticated.' };
@@ -737,7 +1108,6 @@ export function AuthProvider({ children }) {
         return { success: false, error: 'User account not found.' };
       }
 
-      // Verify current password if user has one set
       if (user.passwordHash) {
         const inputOldHash = await hashPassword(oldPassword);
         const isMatch = user.passwordHash === inputOldHash || user.passwordHash === oldPassword;
@@ -754,7 +1124,6 @@ export function AuthProvider({ children }) {
         updatedAt: now
       });
 
-      // Update Supabase Auth if online/configured
       if (isSupabaseConfigured() && supabase) {
         try {
           await supabase.auth.updateUser({ password: newPassword });
@@ -781,6 +1150,21 @@ export function AuthProvider({ children }) {
     }
     const normalizedEmail = email.trim().toLowerCase();
 
+    // 1. Try server reset endpoint
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: normalizedEmail })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        return { success: true, message: data.message, resetToken: data.resetToken };
+      }
+    } catch {
+      // Offline fallback
+    }
+
     try {
       await initializeDatabase();
       const user = await db.users.where('email').equalsIgnoreCase(normalizedEmail).first();
@@ -797,10 +1181,9 @@ export function AuthProvider({ children }) {
         }
       }
 
-      // Local IndexedDB password reset token generation
       if (user) {
         const resetToken = `rst_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
-        const resetExpiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+        const resetExpiresAt = new Date(Date.now() + 3600000).toISOString();
         await db.users.update(user.id, {
           resetToken,
           resetExpiresAt,
@@ -818,7 +1201,6 @@ export function AuthProvider({ children }) {
         };
       }
 
-      // If user not in local Dexie but Supabase succeeded
       if (supabaseDispatched) {
         return {
           success: true,
@@ -838,7 +1220,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // RESET PASSWORD WITH TOKEN / DIRECT RESET
+  // RESET PASSWORD WITH TOKEN
   const resetPasswordWithToken = async ({ email, token, newPassword }) => {
     if (!email || !newPassword) {
       return { success: false, error: 'Email and new password are required.' };
@@ -857,7 +1239,6 @@ export function AuthProvider({ children }) {
         return { success: false, error: 'No account found with this email address.' };
       }
 
-      // Check token if present on record
       if (user.resetToken && token && user.resetToken !== token) {
         return { success: false, error: 'Invalid or expired reset token.' };
       }
@@ -872,7 +1253,6 @@ export function AuthProvider({ children }) {
         updatedAt: now
       });
 
-      // Update Supabase Auth if session active or client configured
       if (isSupabaseConfigured() && supabase) {
         try {
           await supabase.auth.updateUser({ password: newPassword });
@@ -899,6 +1279,7 @@ export function AuthProvider({ children }) {
         loginWithPin,
         loginWithGoogle,
         loginDemo,
+        loginContinuous,
         logout,
         updateUserProfile,
         removeProfilePhoto,

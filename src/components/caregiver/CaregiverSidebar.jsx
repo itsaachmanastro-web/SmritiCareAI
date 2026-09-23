@@ -5,6 +5,7 @@ import {
   Heart,
   CalendarCheck,
   Pill,
+  MapPin,
   FileText,
   Users,
   BookOpen,
@@ -16,6 +17,7 @@ import UserAvatar from '../common/UserAvatar';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 export default function CaregiverSidebar({ 
   activeTab = 'home', 
@@ -27,13 +29,15 @@ export default function CaregiverSidebar({
   const { currentUser } = useAuth();
   const { isDark } = useTheme();
   const { t } = useLanguage();
+  const { canAccessReports } = useEntitlements();
 
   const navItems = [
     { id: 'home', label: t('navigation.home') || 'Home', icon: Home },
     { id: 'loved-one', label: t('caregiver.lovedOne') || 'Loved One', icon: Heart },
+    { id: 'location', label: t('location.patientLocation') || 'Patient Location', icon: MapPin },
     { id: 'daily-care', label: t('caregiver.dailyCare') || 'Daily Care', icon: CalendarCheck },
     { id: 'medication', label: t('caregiver.medication') || 'Medication', icon: Pill },
-    { id: 'reports', label: t('navigation.reports') || 'Reports', icon: FileText },
+    { id: 'reports', label: t('navigation.reports') || 'Reports', icon: FileText, isLocked: !canAccessReports, lockedTier: 'Standard+' },
     { id: 'community', label: t('navigation.community') || 'Community', icon: Users, path: '/community' },
     { id: 'resources', label: t('navigation.resources') || 'Resources', icon: BookOpen, path: '/economy' },
     { id: 'settings', label: t('navigation.settings') || 'Settings', icon: Settings },
@@ -85,14 +89,21 @@ export default function CaregiverSidebar({
                 key={item.id}
                 type="button"
                 onClick={() => handleNavClick(item)}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left cursor-pointer ${
+                className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 text-left cursor-pointer ${
                   isActive
                     ? 'bg-[#143D30] text-white shadow-xs dark:bg-[#122C27] dark:border dark:border-[#1E4D43] dark:text-[#4ADE80]'
                     : 'text-[#4A5954] dark:text-[#94A3B8] hover:text-[#192320] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white dark:text-[#4ADE80]' : 'text-[#6E7D76] dark:text-[#64748B]'}`} />
-                <span className="truncate">{item.label}</span>
+                <div className="flex items-center gap-3 min-w-0">
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white dark:text-[#4ADE80]' : 'text-[#6E7D76] dark:text-[#64748B]'}`} />
+                  <span className="truncate">{item.label}</span>
+                </div>
+                {item.isLocked && (
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300/80 dark:border-amber-800 shrink-0">
+                    {item.lockedTier}
+                  </span>
+                )}
               </button>
             );
           })}

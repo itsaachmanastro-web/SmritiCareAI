@@ -9,7 +9,7 @@ export default function AuthDebugPanel() {
     return null;
   }
 
-  const { currentUser, role, isAuthenticated, loginDemo, logout } = useAuth();
+  const { currentUser, role, isAuthenticated, loginDemo, loginContinuous, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [counts, setCounts] = useState({ users: 0, sessions: 0, syncQueue: 0 });
   const [adaptiveData, setAdaptiveData] = useState(null);

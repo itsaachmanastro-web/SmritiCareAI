@@ -127,6 +127,7 @@ export default function MekhelaPatternGame() {
   const [mistakes, setMistakes] = useState(0);
   const [startTime, setStartTime] = useState(null);
   const [duration, setDuration] = useState(0);
+  const [adaptationData, setAdaptationData] = useState(null);
   const [feedback, setFeedback] = useState(null); // { correct: bool, selectedId }
   const [roundConfigs, setRoundConfigs] = useState([]);
 
@@ -218,6 +219,9 @@ export default function MekhelaPatternGame() {
           if (result) {
             setContinuousDiff(result.newDifficulty);
             setDifficulty(result.discreteLevel);
+            if (result.adaptation) {
+              setAdaptationData(result.adaptation);
+            }
             if (result.encouragementMessage) {
               setAdaptiveSupport(result.encouragementMessage);
             }
@@ -436,6 +440,8 @@ export default function MekhelaPatternGame() {
           stars={score >= 75 ? 3 : score >= 50 ? 2 : 1}
           timeTaken={duration}
           mistakes={mistakes}
+          adaptationData={adaptationData}
+          difficultyLevel={difficulty}
           onPlayAgain={startGame}
           onNext={handleNextActivity}
           gameName="Mekhela Pattern Match"

@@ -10,10 +10,15 @@ import {
   Users, 
   Settings,
   Sparkles,
-  Leaf
+  Leaf,
+  ShieldCheck,
+  ChevronRight
 } from 'lucide-react';
 import { useAssistant } from '../../context/AssistantContext';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { usePatientLocation } from '../../hooks/usePatientLocation';
 import { SmritiLogo } from './NerIcons';
 
 export default function Sidebar({ className = '' }) {
@@ -21,6 +26,11 @@ export default function Sidebar({ className = '' }) {
   const navigate = useNavigate();
   const { openAssistant } = useAssistant();
   const { isDark } = useTheme();
+  const { t } = useLanguage();
+  const { currentUser } = useAuth();
+
+  // Keep background geolocation tracking active while in patient view
+  usePatientLocation(currentUser?.id || 1, true);
 
   const navItems = [
     {
@@ -155,6 +165,58 @@ export default function Sidebar({ className = '' }) {
             );
           })}
         </nav>
+
+        {/* Dedicated Location & Safety Navigation Card */}
+        <div className="mt-4 pt-4 border-t border-[#DFEAE2] dark:border-[#183830]">
+          <NavLink
+            to="/patient/safety"
+            className={({ isActive }) => `block p-3 rounded-2xl transition-all cursor-pointer group ${
+              isActive || location.pathname === '/patient/safety'
+                ? 'bg-[#143D30] text-white shadow-sm dark:bg-[#122E26] dark:text-[#5EEAD4] dark:border dark:border-[#14B8A6]/40'
+                : 'bg-emerald-50/70 dark:bg-[#0C1F1B] border border-emerald-200/70 dark:border-[#183D33] hover:bg-emerald-100/70 dark:hover:bg-[#102B25] text-[#142823] dark:text-[#E2EAE5]'
+            }`}
+          >
+            {({ isActive }) => {
+              const active = isActive || location.pathname === '/patient/safety';
+              return (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                        active 
+                          ? 'bg-white/20 text-white dark:text-[#5EEAD4]' 
+                          : 'bg-emerald-100 dark:bg-[#133A2F] text-emerald-700 dark:text-[#2DD4BF]'
+                      }`}>
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <span className={`text-xs font-bold block ${
+                          active ? 'text-white dark:text-[#5EEAD4]' : 'text-[#143D30] dark:text-[#E2F5EC]'
+                        }`}>
+                          {t('location.locationAndSafety') || 'Location & Safety'}
+                        </span>
+                        <span className={`text-[10px] font-semibold flex items-center gap-1 ${
+                          active ? 'text-emerald-200 dark:text-[#5EEAD4]' : 'text-emerald-700 dark:text-[#34D399]'
+                        }`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>{t('location.sharingOn') || 'Sharing On'}</span>
+                        </span>
+                      </div>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${
+                      active ? 'text-white/80 dark:text-[#5EEAD4]' : 'text-[#5C756D] dark:text-[#7E9C94]'
+                    }`} />
+                  </div>
+                  <p className={`text-[10px] leading-tight px-0.5 ${
+                    active ? 'text-emerald-100/90 dark:text-[#B2ECE1]' : 'text-[#5C756D] dark:text-[#7E9C94]'
+                  }`}>
+                    {t('location.sidebarNotice') || 'Your location is being shared securely with your caregiver.'}
+                  </p>
+                </div>
+              );
+            }}
+          </NavLink>
+        </div>
       </div>
 
       {/* Bottom Botanical Inspiration Quote */}

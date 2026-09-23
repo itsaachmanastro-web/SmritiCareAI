@@ -16,10 +16,13 @@ import {
   Film,
   Zap,
   TrendingUp,
-  Activity
+  Activity,
+  Heart,
+  HelpCircle
 } from 'lucide-react';
 import ElderButton from '../../../components/common/ElderButton';
 import ConfettiCelebration from '../../../components/common/ConfettiCelebration';
+import AiAdaptationCard from '../../../components/common/AiAdaptationCard';
 import VoicePromptCard from '../../../components/common/VoicePromptCard';
 import MotionVideoPlayer from '../../../components/games/MotionVideoPlayer';
 import { playMatchSuccessSound, playCardFlipSound, playTokaBambooSound } from '../../../audio/synthAudio';
@@ -35,9 +38,10 @@ import {
   completeMemoryMotionSession,
   generateSessionRecommendation
 } from '../../../services/games/MemoryMotionEngine';
-import { MEMORY_MOTION_CHALLENGES } from '../../../data/memoryMotionChallenges';
+import { MEMORY_MOTION_CHALLENGES } from '../../../data/memoryMotionChallenges.js';
+import { getScenarioVideo } from '../../../services/games/CognitiveVideoService.js';
 
-const TOTAL_SESSION_ROUNDS = 5;
+const TOTAL_SESSION_ROUNDS = 4;
 
 export default function MemoryMotionGame() {
   const navigate = useNavigate();
@@ -47,8 +51,11 @@ export default function MemoryMotionGame() {
   const currentUserId = currentUser?.id || 1;
   const userName = currentUser?.name || 'Amma';
 
-  // Game flow states: 'intro' | 'watching' | 'question' | 'feedback' | 'summary'
-  const [gameState, setGameState] = useState('intro');
+  // Active Step: 1 = Watch Video, 2 = Answer Questions, 3 = See Your Result
+  const [activeStep, setActiveStep] = useState(1);
+
+  // Game flow states: 'watching' | 'question' | 'feedback' | 'summary'
+  const [gameState, setGameState] = useState('watching');
 
   // Adaptive Difficulty State (Continuous 1.0 to 10.0)
   const [currentDifficulty, setCurrentDifficulty] = useState(INITIAL_DIFFICULTY);
@@ -60,7 +67,7 @@ export default function MemoryMotionGame() {
   const [currentChallenge, setCurrentChallenge] = useState(null);
   const [usedChallengeIds, setUsedChallengeIds] = useState([]);
   const [sessionResults, setSessionResults] = useState([]);
-  const [replaysRemaining, setReplaysRemaining] = useState(1);
+  const [replaysRemaining, setReplaysRemaining] = useState(2);
 
   // Question & Reaction Time Tracking
   const [questionStartTime, setQuestionStartTime] = useState(0);
@@ -74,22 +81,25 @@ export default function MemoryMotionGame() {
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const sessionStartTimeRef = useRef(Date.now());
 
-  // Load user's adaptive difficulty profile on mount
+  // Load user's adaptive difficulty profile on mount & start round 1
   useEffect(() => {
-    async function loadProfile() {
+    async function loadProfileAndStart() {
+      sessionStartTimeRef.current = Date.now();
+      let diff = INITIAL_DIFFICULTY;
       try {
         const prof = await getMemoryMotionProfile(currentUserId);
         if (prof) {
           setAdaptiveProfile(prof);
-          const diff = Number(prof.currentDifficulty) || INITIAL_DIFFICULTY;
+          diff = Number(prof.currentDifficulty) || INITIAL_DIFFICULTY;
           setCurrentDifficulty(diff);
           setStartDifficulty(diff);
         }
       } catch (err) {
         console.warn('Could not load Memory Motion profile:', err);
       }
+      startRound(diff, [], 1);
     }
-    loadProfile();
+    loadProfileAndStart();
   }, [currentUserId]);
 
   // Clean up timers on unmount
@@ -103,17 +113,10 @@ export default function MemoryMotionGame() {
   // Session Flow Handlers
   // ---------------------------------------------------------------------------
 
-  const handleStartSession = () => {
-    sessionStartTimeRef.current = Date.now();
-    setCurrentRound(1);
-    setSessionResults([]);
-    setUsedChallengeIds([]);
-    startRound(currentDifficulty, []);
-  };
-
-  const startRound = (targetDifficulty, usedIds) => {
+  const startRound = (targetDifficulty, usedIds, roundNum = 1) => {
     const nextChal = selectNextChallenge({
       currentDifficulty: targetDifficulty,
+      roundIndex: roundNum,
       userSkillScores: adaptiveProfile ? {
         visualMemory: adaptiveProfile.visualMemoryScore,
         attention: adaptiveProfile.attentionScore,
@@ -134,13 +137,25 @@ export default function MemoryMotionGame() {
 
     setSelectedOptionIndex(null);
     setLastChallengeResult(null);
+    setActiveStep(1);
     setGameState('watching');
   };
 
   const handleVideoEnded = () => {
-    // Transition to question phase
+    // Keep in watching until user clicks Continue After Video
+  };
+
+  const handleProceedToQuestions = () => {
+    setActiveStep(2);
     setGameState('question');
     setQuestionStartTime(Date.now());
+  };
+
+  const handleRewatchVideo = () => {
+    if (replaysRemaining <= 0) return;
+    handleReplayUsed();
+    setActiveStep(1);
+    setGameState('watching');
   };
 
   const handleReplayUsed = () => {
@@ -170,7 +185,7 @@ export default function MemoryMotionGame() {
         challenge: currentChallenge,
         correct: isCorrect,
         responseTimeMs,
-        replayCount: (currentChallenge.maxReplays || 1) - replaysRemaining,
+        replayCount: (currentChallenge.maxReplays || 2) - replaysRemaining,
         currentDifficulty,
         recentSessionResults: sessionResults
       });
@@ -204,7 +219,7 @@ export default function MemoryMotionGame() {
     if (currentRound < TOTAL_SESSION_ROUNDS) {
       const nextRoundNum = currentRound + 1;
       setCurrentRound(nextRoundNum);
-      startRound(currentDifficulty, usedChallengeIds);
+      startRound(currentDifficulty, usedChallengeIds, nextRoundNum);
     } else {
       // Session Completed!
       await handleCompleteSession();
@@ -213,6 +228,7 @@ export default function MemoryMotionGame() {
 
   const handleCompleteSession = async () => {
     const totalDurationSec = Math.round((Date.now() - sessionStartTimeRef.current) / 1000);
+    setActiveStep(3);
     setGameState('summary');
     setIsGeneratingAi(true);
 
@@ -244,6 +260,14 @@ export default function MemoryMotionGame() {
     }
   };
 
+  const handleRestartSession = () => {
+    sessionStartTimeRef.current = Date.now();
+    setCurrentRound(1);
+    setSessionResults([]);
+    setUsedChallengeIds([]);
+    startRound(currentDifficulty, [], 1);
+  };
+
   // Helper for challenge question text localized
   const getLocalizedText = (textObj) => {
     if (!textObj) return '';
@@ -251,383 +275,479 @@ export default function MemoryMotionGame() {
     return textObj[language] || textObj.en || '';
   };
 
+  const currentScenario = currentChallenge ? getScenarioVideo(currentChallenge) : null;
+  const scenarioTitle = currentScenario ? getLocalizedText(currentScenario.title) : '';
+
   const tierInfo = getTierInfo(currentDifficulty);
+  const tierName = t(tierInfo.labelKey) || tierInfo.defaultLabel;
 
-  // ---------------------------------------------------------------------------
-  // RENDER: Phase 1 — INTRO
-  // ---------------------------------------------------------------------------
-  if (gameState === 'intro') {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-6 md:py-10 space-y-6 animate-fade-in">
-        {/* Top Back Navigation */}
-        <div className="flex items-center justify-between">
-          <button
-            type="button"
-            onClick={() => navigate('/patient/games')}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white dark:bg-[#131D33] hover:bg-slate-100 dark:hover:bg-[#1E293B] border border-slate-200 dark:border-[#243352] text-slate-700 dark:text-slate-200 font-bold text-base min-h-[48px] transition-colors cursor-pointer"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>{t('common.back') || 'Back'}</span>
-          </button>
-
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-indigo-100 dark:bg-indigo-950/80 text-indigo-900 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>{t('games.memorymotion.aiAdaptiveBadge') || 'AI-Adaptive Video Training'}</span>
-          </span>
-        </div>
-
-        {/* Hero Card */}
-        <div className="bg-gradient-to-br from-indigo-50 via-teal-50 to-emerald-50 dark:from-[#131D33] dark:via-[#19243E] dark:to-[#131D33] rounded-3xl md:rounded-4xl p-6 md:p-8 border-3 border-indigo-200 dark:border-indigo-800/80 shadow-lg text-center space-y-4">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-600 text-white flex items-center justify-center mx-auto shadow-md">
-            <Film className="w-8 h-8" />
-          </div>
-
-          <div className="space-y-1">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white font-display">
-              {t('games.memorymotion.title') || 'Memory Motion'}
-            </h1>
-            <p className="text-base md:text-lg font-bold text-indigo-800 dark:text-indigo-300">
-              {t('games.memorymotion.subtitle') || 'Watch • Remember • Respond'}
-            </p>
-          </div>
-
-          <p className="text-slate-600 dark:text-slate-300 text-sm md:text-base max-w-xl mx-auto font-medium">
-            {t('games.memorymotion.introDesc') || 'Watch short, peaceful everyday scenes. Notice the actions, colors, and objects, then answer simple questions to keep your memory sharp and active.'}
-          </p>
-
-          {/* Current Adaptive Difficulty Pill */}
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-2xl bg-white dark:bg-[#1E293B] border-2 border-indigo-200 dark:border-indigo-700 shadow-xs">
-            <Brain className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <div className="text-left">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                {t('games.memorymotion.currentLevel') || 'Current Adapted Level'}
-              </span>
-              <span className="text-sm font-black text-slate-900 dark:text-white">
-                Level {currentDifficulty.toFixed(1)} &bull; {t(tierInfo.labelKey) || tierInfo.defaultLabel}
-              </span>
-            </div>
-          </div>
-
-          {/* Start Action */}
-          <div className="pt-2">
-            <ElderButton
-              variant="primary"
-              size="lg"
-              icon={Play}
-              onClick={handleStartSession}
-              className="w-full sm:w-auto px-10 shadow-lg"
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-16">
+      {/* Top Breadcrumb & Back Navigation */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-2">
+        <div className="flex items-center justify-between text-xs sm:text-sm text-slate-400">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => navigate('/patient/games')}
+              className="hover:text-white transition-colors cursor-pointer flex items-center gap-1 font-semibold"
             >
-              {t('games.memorymotion.startSession') || 'Start Memory Session (5 Rounds)'}
-            </ElderButton>
+              <span>Cognitive Games</span>
+            </button>
+            <span>&rsaquo;</span>
+            <span className="text-slate-200 font-bold">
+              {t('games.memorymotion.title') || 'Memory in Daily Life'}
+            </span>
           </div>
-        </div>
 
-        {/* Voice Prompt Instructions */}
-        <VoicePromptCard
-          text={t('games.memorymotion.voicePrompt') || 'Welcome to Memory Motion. Watch each short video carefully. When it finishes, choose the correct answer at your own peaceful pace.'}
-          label={t('games.memorymotion.listenGuide') || 'Listen to Instructions'}
-        />
-      </div>
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // RENDER: Phase 2 — WATCHING VIDEO
-  // ---------------------------------------------------------------------------
-  if (gameState === 'watching' && currentChallenge) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-6 md:py-8 space-y-5 animate-fade-in">
-        {/* Round Progress Header */}
-        <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={() => navigate('/patient/games')}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-white dark:bg-[#131D33] hover:bg-slate-100 dark:hover:bg-[#1E293B] border border-slate-200 dark:border-[#243352] text-slate-700 dark:text-slate-200 font-bold text-sm transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold text-xs transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             <span>{t('common.exit') || 'Exit'}</span>
           </button>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#131D33] px-3 py-1 rounded-full border border-slate-200 dark:border-[#243352]">
-              {t('games.memorymotion.round') || 'Round'} {currentRound} / {TOTAL_SESSION_ROUNDS}
-            </span>
-            <span className="text-xs font-black text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/80 px-3 py-1 rounded-full border border-indigo-200 dark:border-indigo-800">
-              Level {currentDifficulty.toFixed(1)}
-            </span>
-          </div>
         </div>
-
-        {/* Video Player Component */}
-        <MotionVideoPlayer
-          challenge={currentChallenge}
-          onVideoEnded={handleVideoEnded}
-          replaysRemaining={replaysRemaining}
-          onReplayUsed={handleReplayUsed}
-          autoPlay={true}
-        />
       </div>
-    );
-  }
 
-  // ---------------------------------------------------------------------------
-  // RENDER: Phase 3 — QUESTION
-  // ---------------------------------------------------------------------------
-  if (gameState === 'question' && currentChallenge) {
-    const questionText = getLocalizedText(currentChallenge.question);
-
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-6 md:py-8 space-y-6 animate-fade-in">
-        {/* Header Bar */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-            {t('games.memorymotion.round') || 'Round'} {currentRound} of {TOTAL_SESSION_ROUNDS}
-          </span>
-          <span className="text-xs font-bold text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/60 px-3 py-1 rounded-full border border-teal-200 dark:border-teal-800">
-            {t('games.memorymotion.takeYourTime') || 'Take your time • No rush'}
-          </span>
-        </div>
-
-        {/* Question Card */}
-        <div className="bg-white dark:bg-[#131D33] rounded-3xl p-6 md:p-8 border-3 border-slate-200 dark:border-[#243352] shadow-xl space-y-6">
-          <div className="space-y-2">
-            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-black uppercase tracking-wider bg-teal-100 dark:bg-teal-950 text-teal-900 dark:text-teal-300">
-              <Brain className="w-3.5 h-3.5" />
-              <span>{t('games.memorymotion.questionPrompt') || 'Question on what you saw'}</span>
-            </span>
-
-            <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white leading-snug">
-              {questionText}
-            </h2>
-          </div>
-
-          {/* Multiple Choice Options (Large touch targets for elderly fingers) */}
-          <div className="grid grid-cols-1 gap-3.5 pt-2">
-            {currentChallenge.options.map((option, idx) => {
-              const optText = getLocalizedText(option.text);
-              return (
-                <button
-                  key={option.id || idx}
-                  type="button"
-                  onClick={() => handleAnswerSelect(idx)}
-                  className="w-full text-left p-4 md:p-5 rounded-2xl border-2 border-slate-300 dark:border-[#243352] hover:border-teal-500 dark:hover:border-teal-400 bg-slate-50 hover:bg-teal-50/70 dark:bg-slate-800/60 dark:hover:bg-teal-950/40 text-slate-900 dark:text-white font-bold text-base md:text-lg transition-all transform active:scale-[0.99] flex items-center justify-between gap-4 cursor-pointer shadow-xs min-h-[64px]"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <span className="text-2xl shrink-0">{option.icon || '🔹'}</span>
-                    <span className="leading-snug">{optText}</span>
-                  </div>
-                  <span className="w-7 h-7 rounded-full border-2 border-slate-400 dark:border-slate-600 flex items-center justify-center text-xs font-mono font-bold text-slate-500 shrink-0">
-                    {String.fromCharCode(65 + idx)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Read aloud helper */}
-        <VoicePromptCard
-          text={questionText}
-          label={t('games.memorymotion.listenQuestion') || 'Read Question Aloud'}
-        />
-      </div>
-    );
-  }
-
-  // ---------------------------------------------------------------------------
-  // RENDER: Phase 4 — FEEDBACK
-  // ---------------------------------------------------------------------------
-  if (gameState === 'feedback' && currentChallenge) {
-    const isCorrect = lastChallengeResult?.isCorrect;
-    const explanationText = getLocalizedText(currentChallenge.explanation);
-
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-6 md:py-8 space-y-6 animate-fade-in">
-        {/* Feedback Card */}
-        <div className={`rounded-3xl p-6 md:p-8 border-3 shadow-xl space-y-5 ${
-          isCorrect
-            ? 'bg-emerald-50/90 dark:bg-[#131D33] border-emerald-300 dark:border-emerald-800/90 text-emerald-950 dark:text-emerald-100'
-            : 'bg-amber-50/90 dark:bg-[#131D33] border-amber-300 dark:border-amber-800/90 text-amber-950 dark:text-amber-100'
-        }`}>
-          <div className="flex items-center gap-4">
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-md ${
-              isCorrect ? 'bg-emerald-600' : 'bg-amber-600'
-            }`}>
-              {isCorrect ? <CheckCircle2 className="w-8 h-8" /> : <RotateCcw className="w-8 h-8" />}
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-2 space-y-6">
+        
+        {/* Title & Status Header matching Reference Image */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            {/* Brain Icon Square */}
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+              <Brain className="w-7 h-7" />
             </div>
 
             <div>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white">
-                {isCorrect
-                  ? (t('games.memorymotion.correctTitle') || 'Splendid! You Remembered! 🌟')
-                  : (t('games.memorymotion.tryTitle') || 'Good Try! Notice Next Time 🌸')}
-              </h2>
-              <p className="text-sm md:text-base font-semibold text-slate-700 dark:text-slate-300 mt-0.5">
-                {isCorrect
-                  ? (t('games.memorymotion.correctSubtitle') || 'Your visual attention was spot-on.')
-                  : (t('games.memorymotion.trySubtitle') || 'Every gentle attempt strengthens your mind.')}
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">
+                {t('games.memorymotion.title') || 'Memory in Daily Life'}
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-400 font-medium">
+                {scenarioTitle
+                  ? `${t('games.memorymotion.round') || 'Round'} ${currentRound}: ${scenarioTitle} — ${t('games.memorymotion.watchInstruction') || 'Watch the video carefully. Try to remember what happens.'}`
+                  : (t('games.memorymotion.watchInstruction') || 'Watch the video carefully. Try to remember what happens.')}
               </p>
             </div>
           </div>
 
-          {/* Explanation Box */}
-          <div className="p-4 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 text-sm md:text-base font-medium text-slate-800 dark:text-slate-200">
-            {explanationText}
-          </div>
-
-          {/* Adaptive Engine Micro-Adjustment Notification */}
-          <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/90 dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-              <span>
-                {t('games.memorymotion.adaptedTo') || 'Difficulty Adapted'}:{' '}
-                <span className="font-black text-indigo-600 dark:text-indigo-400">
-                  Level {currentDifficulty.toFixed(1)}
-                </span>
-                {' '}&bull; {t(tierInfo.labelKey) || tierInfo.defaultLabel}
-              </span>
-            </div>
-
-            <span className="text-[11px] text-slate-500">
-              Round {currentRound} of {TOTAL_SESSION_ROUNDS}
+          {/* Status Badges on the right */}
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto">
+            <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-slate-900 text-slate-300 border border-slate-800 shadow-xs">
+              {t('games.memorymotion.round') || 'Round'} {currentRound} of {TOTAL_SESSION_ROUNDS}
             </span>
-          </div>
 
-          {/* Continue Action */}
-          <div className="pt-2 flex justify-end">
-            <ElderButton
-              variant={isCorrect ? 'primary' : 'orange'}
-              size="lg"
-              icon={Play}
-              onClick={handleNextRound}
-              className="w-full sm:w-auto px-8 shadow-md"
-            >
-              {currentRound < TOTAL_SESSION_ROUNDS
-                ? (t('games.memorymotion.nextRound') || 'Next Challenge →')
-                : (t('games.memorymotion.finishSession') || 'View Session Summary →')}
-            </ElderButton>
+            <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-teal-950/80 text-teal-300 border border-teal-700/80 shadow-xs flex items-center gap-1.5">
+              <span>Level {Math.round(currentDifficulty)} ({tierName.split('&')[0].trim()})</span>
+            </span>
           </div>
         </div>
-      </div>
-    );
-  }
 
-  // ---------------------------------------------------------------------------
-  // RENDER: Phase 5 — SESSION SUMMARY
-  // ---------------------------------------------------------------------------
-  if (gameState === 'summary') {
-    const accuracy = summaryData?.accuracy ?? 100;
-    const avgSec = summaryData?.avgResponseTimeMs ? (summaryData.avgResponseTimeMs / 1000).toFixed(1) : '3.2';
-    const finalDiff = summaryData?.finalDifficulty ?? currentDifficulty;
-    const diffDelta = summaryData?.difficultyDelta ?? 0;
+        {/* 2-Column Main Layout Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          
+          {/* ================================================================= */}
+          {/* LEFT / CENTER COLUMN (Primary Visual Focus: Video or Questions)   */}
+          {/* ================================================================= */}
+          <div className="lg:col-span-8 space-y-4">
+            
+            {/* PHASE 1: WATCHING VIDEO */}
+            {gameState === 'watching' && currentChallenge && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <MotionVideoPlayer
+                  challenge={currentChallenge}
+                  onVideoEnded={handleVideoEnded}
+                  replaysRemaining={replaysRemaining}
+                  onReplayUsed={handleReplayUsed}
+                  autoPlay={true}
+                />
+              </motion.div>
+            )}
 
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-6 md:py-10 space-y-6 animate-fade-in">
-        <ConfettiCelebration />
+            {/* PHASE 2: QUESTION */}
+            {gameState === 'question' && currentChallenge && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-6"
+              >
+                {/* Header Bar */}
+                <div className="flex items-center justify-between border-b border-slate-800/80 pb-4">
+                  <span className="inline-flex items-center gap-2 text-xs font-bold text-teal-400 bg-teal-950/60 px-3 py-1 rounded-full border border-teal-800/60">
+                    <Brain className="w-3.5 h-3.5" />
+                    <span>{t('games.memorymotion.questionPrompt') || 'Question on what you saw'}</span>
+                  </span>
 
-        {/* Summary Hero */}
-        <div className="bg-gradient-to-br from-indigo-50 via-teal-50 to-emerald-50 dark:from-[#131D33] dark:via-[#19243E] dark:to-[#131D33] rounded-3xl md:rounded-4xl p-6 md:p-8 border-3 border-teal-300 dark:border-teal-800/80 shadow-xl text-center space-y-5">
-          <div className="w-16 h-16 rounded-3xl bg-teal-600 text-white flex items-center justify-center mx-auto text-3xl shadow-md">
-            🌟
+                  <div className="flex items-center gap-2">
+                    {replaysRemaining > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleRewatchVideo}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-bold transition-colors cursor-pointer"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>{t('games.memorymotion.rewatchVideo') || 'Re-watch Video'}</span>
+                      </button>
+                    )}
+                    <span className="text-xs font-bold text-slate-400">
+                      {t('games.memorymotion.takeYourTime') || 'Take your time • No rush'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Big Question Prompt */}
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-snug">
+                  {getLocalizedText(currentChallenge.question)}
+                </h2>
+
+                {/* Multiple Choice Options (Large touch targets) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                  {currentChallenge.options.map((option, idx) => {
+                    const optText = getLocalizedText(option.text);
+                    return (
+                      <button
+                        key={option.id || idx}
+                        type="button"
+                        onClick={() => handleAnswerSelect(idx)}
+                        className="w-full text-left p-4 sm:p-5 rounded-2xl border-2 border-slate-700/80 hover:border-blue-500 bg-slate-800/80 hover:bg-blue-950/40 text-white font-bold text-base sm:text-lg transition-all transform active:scale-[0.99] flex items-center justify-between gap-4 cursor-pointer shadow-md min-h-[64px]"
+                      >
+                        <div className="flex items-center gap-3.5">
+                          <span className="text-2xl shrink-0">{option.icon || '🔹'}</span>
+                          <span className="leading-snug">{optText}</span>
+                        </div>
+                        <span className="w-7 h-7 rounded-full border-2 border-slate-600 flex items-center justify-center text-xs font-mono font-bold text-slate-400 shrink-0">
+                          {String.fromCharCode(65 + idx)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Voice Read Aloud Helper */}
+                <div className="pt-2">
+                  <VoicePromptCard
+                    text={getLocalizedText(currentChallenge.question)}
+                    label={t('games.memorymotion.listenQuestion') || 'Read Question Aloud'}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* PHASE 2.5: FEEDBACK */}
+            {gameState === 'feedback' && currentChallenge && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl space-y-6"
+              >
+                {/* Result Status Banner */}
+                <div className={`p-5 rounded-2xl border-2 flex items-center gap-4 ${
+                  lastChallengeResult?.isCorrect
+                    ? 'bg-emerald-950/40 border-emerald-600/80 text-emerald-100'
+                    : 'bg-amber-950/40 border-amber-600/80 text-amber-100'
+                }`}>
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-white shrink-0 shadow-md ${
+                    lastChallengeResult?.isCorrect ? 'bg-emerald-600' : 'bg-amber-600'
+                  }`}>
+                    {lastChallengeResult?.isCorrect ? <CheckCircle2 className="w-7 h-7" /> : <RotateCcw className="w-7 h-7" />}
+                  </div>
+
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-black text-white">
+                      {lastChallengeResult?.isCorrect
+                        ? (t('games.memorymotion.correctTitle') || 'Splendid! You Remembered! 🌟')
+                        : (t('games.memorymotion.tryTitle') || 'Good Try! Notice Next Time 🌸')}
+                    </h3>
+                    <p className="text-xs sm:text-sm font-semibold text-slate-300 mt-0.5">
+                      {lastChallengeResult?.isCorrect
+                        ? (t('games.memorymotion.correctSubtitle') || 'Your visual memory and observation was spot-on.')
+                        : (t('games.memorymotion.trySubtitle') || 'Every gentle attempt strengthens your mind.')}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Explanation */}
+                <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-sm sm:text-base font-medium text-slate-200">
+                  {getLocalizedText(currentChallenge.explanation)}
+                </div>
+
+                {/* Micro-Adjustment Notification */}
+                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-800/60 border border-slate-700/60 text-xs font-bold text-slate-300">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4 text-blue-400" />
+                    <span>
+                      {t('games.memorymotion.currentLevel') || 'Difficulty Adapted'}:{' '}
+                      <span className="font-black text-blue-400">
+                        Level {currentDifficulty.toFixed(1)}
+                      </span>
+                      {' '}&bull; {tierName}
+                    </span>
+                  </div>
+
+                  <span className="text-[11px] text-slate-400">
+                    Round {currentRound} of {TOTAL_SESSION_ROUNDS}
+                  </span>
+                </div>
+
+                {/* Action to proceed */}
+                <div className="flex justify-end pt-2">
+                  <ElderButton
+                    variant={lastChallengeResult?.isCorrect ? 'primary' : 'orange'}
+                    size="lg"
+                    icon={Play}
+                    onClick={handleNextRound}
+                    className="w-full sm:w-auto px-8 shadow-lg"
+                  >
+                    {currentRound < TOTAL_SESSION_ROUNDS
+                      ? `${t('games.memorymotion.nextRound') || 'Next Round'} (${t('games.memorymotion.round') || 'Round'} ${currentRound + 1} of ${TOTAL_SESSION_ROUNDS}) →`
+                      : (t('games.memorymotion.finishSession') || 'View Session Summary →')}
+                  </ElderButton>
+                </div>
+              </motion.div>
+            )}
+
+            {/* PHASE 3: SESSION SUMMARY */}
+            {gameState === 'summary' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-800 shadow-2xl text-center space-y-6"
+              >
+                <ConfettiCelebration />
+
+                <div className="w-16 h-16 rounded-3xl bg-teal-600 text-white flex items-center justify-center mx-auto text-3xl shadow-lg">
+                  🌟
+                </div>
+
+                <div className="space-y-1">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-display">
+                    {t('games.memorymotion.sessionComplete') || 'Session Complete! Wonderful Job!'}
+                  </h2>
+                  <p className="text-slate-300 text-sm sm:text-base font-semibold">
+                    {t('games.memorymotion.sessionEncouragement') || 'You exercised your visual memory, sequence awareness, and reaction focus.'}
+                  </p>
+                </div>
+
+                {/* Score Stats Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-center">
+                    <span className="text-xs font-bold text-slate-400 block uppercase">
+                      {t('games.score') || 'Accuracy'}
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-emerald-400">
+                      {summaryData?.accuracy ?? 100}%
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-center">
+                    <span className="text-xs font-bold text-slate-400 block uppercase">
+                      {t('games.memorymotion.avgSpeed') || 'Avg Response'}
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-blue-400">
+                      {summaryData?.avgResponseTimeMs ? (summaryData.avgResponseTimeMs / 1000).toFixed(1) : '3.2'}s
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-center">
+                    <span className="text-xs font-bold text-slate-400 block uppercase">
+                      {t('games.memorymotion.completedChallenges') || 'Rounds'}
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-white">
+                      {TOTAL_SESSION_ROUNDS}/{TOTAL_SESSION_ROUNDS}
+                    </span>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-800/80 border border-slate-700 text-center">
+                    <span className="text-xs font-bold text-slate-400 block uppercase">
+                      {t('games.level') || 'Adapted Level'}
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-teal-400">
+                      {currentDifficulty.toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* AI Adaptation Status Card */}
+                <AiAdaptationCard
+                  adaptationData={summaryData?.adaptation}
+                  score={summaryData?.accuracy ?? 100}
+                  mistakes={TOTAL_SESSION_ROUNDS - (summaryData?.sessionResults?.filter(r => r.correct)?.length || 0)}
+                  difficultyLevel={currentDifficulty}
+                  className="my-2"
+                />
+
+                {/* AI Recommendation Box */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-blue-950/40 border border-blue-800 text-left space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs font-black text-blue-300 uppercase tracking-wider">
+                    <Sparkles className="w-4 h-4 text-blue-400" />
+                    <span>{t('games.memorymotion.aiNote') || 'SmritiCare Supportive Cognitive Guidance'}</span>
+                  </div>
+                  <p className="text-xs sm:text-sm font-semibold text-slate-200 leading-relaxed">
+                    {isGeneratingAi ? (t('common.loading') || 'Synthesizing gentle encouragement...') : aiRecommendation}
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  <ElderButton
+                    variant="orange"
+                    size="lg"
+                    icon={RotateCcw}
+                    onClick={handleRestartSession}
+                  >
+                    {t('games.playAgain') || 'Play Another Session'}
+                  </ElderButton>
+
+                  <ElderButton
+                    variant="secondary"
+                    size="lg"
+                    icon={ArrowLeft}
+                    onClick={() => navigate('/patient/games')}
+                  >
+                    {t('games.exitGame') || 'Back to Games'}
+                  </ElderButton>
+                </div>
+              </motion.div>
+            )}
+
           </div>
 
-          <div className="space-y-1">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white font-display">
-              {t('games.memorymotion.sessionComplete') || 'Session Complete! Wonderful Job!'}
-            </h1>
-            <p className="text-slate-600 dark:text-slate-300 text-base md:text-lg font-bold">
-              {t('games.memorymotion.sessionEncouragement') || 'You exercised your visual memory, sequence awareness, and reaction focus.'}
-            </p>
-          </div>
+          {/* ================================================================= */}
+          {/* RIGHT SIDEBAR COLUMN (Step Indicators, Memory Tip, Action Button)  */}
+          {/* ================================================================= */}
+          <div className="lg:col-span-4 space-y-4">
+            
+            {/* 3-Step Progress Card matching Reference Design */}
+            <div className="bg-slate-900 rounded-3xl p-5 sm:p-6 border border-slate-800 shadow-xl space-y-5">
+              
+              {/* STEP 1: Watch the Video */}
+              <div className="space-y-3">
+                <div className="flex items-start gap-3.5">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                    activeStep === 1
+                      ? 'bg-emerald-950 text-emerald-400 ring-2 ring-emerald-500 shadow-emerald-500/20'
+                      : activeStep > 1
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {activeStep > 1 ? (
+                      <CheckCircle2 className="w-5 h-5" />
+                    ) : (
+                      <Eye className="w-5 h-5" />
+                    )}
+                  </div>
 
-          {/* Primary Metrics Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2">
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/80 text-center shadow-xs">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                {t('games.score') || 'Accuracy'}
-              </span>
-              <span className="text-2xl md:text-3xl font-black text-emerald-600 dark:text-emerald-400">
-                {accuracy}%
-              </span>
+                  <div>
+                    <span className="text-[11px] font-bold text-slate-400 block uppercase tracking-wider">
+                      Step 1 of 3
+                    </span>
+                    <h3 className={`text-base sm:text-lg font-black ${activeStep === 1 ? 'text-white' : 'text-slate-300'}`}>
+                      {t('games.memorymotion.step1Title') || 'Watch the Video'}
+                    </h3>
+                    <p className="text-xs text-slate-400 font-medium mt-0.5 leading-relaxed">
+                      {t('games.memorymotion.step1Desc') || 'A short everyday scenario will play. Pay attention to the details.'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Tip Box inside Step 1 */}
+                <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-bold text-amber-400">
+                    <span>💡</span>
+                    <span>{t('games.memorymotion.tipTitle') || 'Tip'}:</span>
+                  </div>
+                  <p className="text-slate-300 font-medium leading-relaxed">
+                    {t('games.memorymotion.tipText') || 'Try to remember the people, objects, colors, and order of actions.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-800/80" />
+
+              {/* STEP 2: Answer Questions */}
+              <div className="flex items-start gap-3.5">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                  activeStep === 2
+                    ? 'bg-blue-950 text-blue-400 ring-2 ring-blue-500'
+                    : activeStep > 2
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-800 text-slate-400'
+                }`}>
+                  {activeStep > 2 ? <CheckCircle2 className="w-5 h-5" /> : '2'}
+                </div>
+
+                <div>
+                  <h3 className={`text-base font-black ${activeStep === 2 ? 'text-white' : 'text-slate-400'}`}>
+                    {t('games.memorymotion.step2Title') || 'Answer Questions'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {t('games.memorymotion.step2Desc') || 'You will be asked a few questions about what you saw.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* STEP 3: See Your Result */}
+              <div className="flex items-start gap-3.5">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm shrink-0 ${
+                  activeStep === 3
+                    ? 'bg-teal-950 text-teal-400 ring-2 ring-teal-500'
+                    : 'bg-slate-800 text-slate-400'
+                }`}>
+                  3
+                </div>
+
+                <div>
+                  <h3 className={`text-base font-black ${activeStep === 3 ? 'text-white' : 'text-slate-400'}`}>
+                    {t('games.memorymotion.step3Title') || 'See Your Result'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    {t('games.memorymotion.step3Desc') || 'Check your score and see how you did!'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Primary Action Button (Continue to Questions) */}
+              {activeStep === 1 && (
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleProceedToQuestions}
+                    className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-base transition-all transform active:scale-[0.99] shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>{t('games.memorymotion.continueToQuestions') || 'Continue to Questions →'}</span>
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/80 text-center shadow-xs">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                {t('games.memorymotion.avgSpeed') || 'Avg Response'}
-              </span>
-              <span className="text-2xl md:text-3xl font-black text-indigo-600 dark:text-indigo-400">
-                {avgSec}s
-              </span>
+            {/* Supportive Encouragement Card */}
+            <div className="bg-slate-900/90 rounded-3xl p-4 sm:p-5 border border-slate-800 shadow-md flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <Heart className="w-5 h-5 fill-current" />
+              </div>
+
+              <div>
+                <h4 className="text-sm font-bold text-white">
+                  {t('games.memorymotion.youAreDoingGreat') || "You're Doing Great!"}
+                </h4>
+                <p className="text-xs text-slate-400 font-medium">
+                  {t('games.memorymotion.smallSteps') || 'Small steps make a big difference 🌿'}
+                </p>
+              </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/80 text-center shadow-xs">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                {t('games.memorymotion.completedChallenges') || 'Rounds'}
-              </span>
-              <span className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">
-                {TOTAL_SESSION_ROUNDS}/{TOTAL_SESSION_ROUNDS}
-              </span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700/80 text-center shadow-xs">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 block uppercase">
-                {t('games.level') || 'Adapted Level'}
-              </span>
-              <span className="text-2xl md:text-3xl font-black text-teal-600 dark:text-teal-400">
-                {finalDiff.toFixed(1)}
-              </span>
-            </div>
           </div>
 
-          {/* Difficulty Progression Indicator */}
-          <div className="p-3.5 rounded-2xl bg-white/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs font-bold flex items-center justify-between text-slate-700 dark:text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <TrendingUp className="w-4 h-4 text-teal-600" />
-              <span>{t('games.memorymotion.levelProgress') || 'Difficulty Progression'}:</span>
-            </span>
-            <span>
-              Level {startDifficulty.toFixed(1)} &rarr;{' '}
-              <span className="text-teal-700 dark:text-teal-400 font-black">
-                Level {finalDiff.toFixed(1)} ({diffDelta >= 0 ? `+${diffDelta}` : diffDelta})
-              </span>
-            </span>
-          </div>
-
-          {/* AI / Supportive Care Recommendation */}
-          <div className="p-4 md:p-5 rounded-2xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-left space-y-1.5">
-            <div className="flex items-center gap-2 text-xs font-black text-amber-900 dark:text-amber-300 uppercase tracking-wider">
-              <Sparkles className="w-4 h-4 text-amber-600" />
-              <span>{t('games.memorymotion.aiNote') || 'SmritiCare Supportive Recommendation'}</span>
-            </div>
-            <p className="text-sm md:text-base font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
-              {isGeneratingAi ? (t('common.loading') || 'Synthesizing gentle encouragement...') : aiRecommendation}
-            </p>
-          </div>
-
-          {/* Action Navigation */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-            <ElderButton
-              variant="orange"
-              size="lg"
-              icon={RotateCcw}
-              onClick={handleStartSession}
-            >
-              {t('games.playAgain') || 'Play Another Session'}
-            </ElderButton>
-
-            <ElderButton
-              variant="secondary"
-              size="lg"
-              icon={ArrowLeft}
-              onClick={() => navigate('/patient/games')}
-            >
-              {t('games.exitGame') || 'Back to Games'}
-            </ElderButton>
-          </div>
         </div>
-      </div>
-    );
-  }
 
-  return null;
+      </div>
+    </div>
+  );
 }

@@ -246,3 +246,7 @@ export function playNotificationChime() {
     osc.stop(startTime + dur + 0.05);
   });
 }
+
+// Alias for positive chime
+export const playPositiveChime = playNotificationChime;
+

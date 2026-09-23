@@ -10,6 +10,29 @@ import {
   handleTest,
   handleChat
 } from './aiServiceHandler.js';
+import {
+  handleLocationUpdate,
+  handleGetPatientLocation,
+  handleUpdateSafeZone,
+  handleEmergencyLocation,
+  handleGetMapsConfig,
+  handleConfigureMapsKey,
+  handleTestMapsKey
+} from './locationServiceHandler.js';
+import {
+  handleAuthLogin,
+  handleAuthRegister,
+  handleAuthGoogle,
+  handleVerifySession,
+  handleAuthLogout,
+  handleAuthResetPassword
+} from './authServiceHandler.js';
+import {
+  handleGetReminders,
+  handleCreateReminder,
+  handleDeleteReminder,
+  handleToggleReminder
+} from './reminderServiceHandler.js';
 
 async function parseJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -122,6 +145,85 @@ export function chatApiPlugin(options = {}) {
         // Chat endpoint: POST /api/ai/chat or /api/chat
         if (url === '/api/ai/chat' || url === '/api/chat') {
           return handleChat(req, res);
+        }
+
+        // Location Update: POST /api/location/update
+        if (url === '/api/location/update') {
+          return handleLocationUpdate(req, res);
+        }
+
+        // Get Patient Location: GET /api/location/patient
+        if (url === '/api/location/patient') {
+          return handleGetPatientLocation(req, res);
+        }
+
+        // Safe Zone Management: POST /api/location/safe-zone
+        if (url === '/api/location/safe-zone') {
+          return handleUpdateSafeZone(req, res);
+        }
+
+        // Emergency SOS Location: POST /api/location/emergency
+        if (url === '/api/location/emergency') {
+          return handleEmergencyLocation(req, res);
+        }
+
+        // Google Maps Config: GET/POST /api/location/maps-config
+        if (url === '/api/location/maps-config') {
+          if (req.method === 'GET') return handleGetMapsConfig(req, res);
+          return handleConfigureMapsKey(req, res);
+        }
+
+        // Google Maps Test: POST /api/location/maps-test
+        if (url === '/api/location/maps-test') {
+          return handleTestMapsKey(req, res);
+        }
+
+        // --- AUTHENTICATION ENDPOINTS ---
+        // Login: POST /api/auth/login
+        if (url === '/api/auth/login') {
+          return handleAuthLogin(req, res);
+        }
+
+        // Register: POST /api/auth/register
+        if (url === '/api/auth/register') {
+          return handleAuthRegister(req, res);
+        }
+
+        // Google OAuth Verify: POST /api/auth/google
+        if (url === '/api/auth/google') {
+          return handleAuthGoogle(req, res);
+        }
+
+        // Verify Session: POST /api/auth/verify-session
+        if (url === '/api/auth/verify-session') {
+          return handleVerifySession(req, res);
+        }
+
+        // Logout: POST /api/auth/logout
+        if (url === '/api/auth/logout') {
+          return handleAuthLogout(req, res);
+        }
+
+        // Reset Password: POST /api/auth/reset-password
+        if (url === '/api/auth/reset-password') {
+          return handleAuthResetPassword(req, res);
+        }
+
+        // --- REMINDER ENDPOINTS ---
+        // Reminders: GET, POST, DELETE, PATCH /api/reminders
+        if (url === '/api/reminders') {
+          if (req.method === 'GET') {
+            return handleGetReminders(req, res);
+          }
+          if (req.method === 'POST') {
+            return handleCreateReminder(req, res);
+          }
+          if (req.method === 'DELETE') {
+            return handleDeleteReminder(req, res);
+          }
+          if (req.method === 'PATCH') {
+            return handleToggleReminder(req, res);
+          }
         }
 
         next();

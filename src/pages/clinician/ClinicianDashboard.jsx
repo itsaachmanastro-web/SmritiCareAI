@@ -1547,7 +1547,8 @@ export default function ClinicianDashboard() {
           isOpen={showReminderModal}
           onClose={() => setShowReminderModal(false)}
           targetUserId={selectedPatientId}
-          patientName={activePatient?.name || 'Patient'}
+          patientId={selectedPatientId}
+          patientName={activePatient?.name || 'Bimala Borah (Amma)'}
         />
       )}
 

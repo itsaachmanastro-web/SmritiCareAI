@@ -1,8 +1,11 @@
 import React from 'react';
-import { Mic } from 'lucide-react';
+import { Mic, Sparkles } from 'lucide-react';
 import SmritiCompanionAvatar from '../common/SmritiCompanionAvatar';
+import { useEntitlements } from '../../hooks/useEntitlements';
 
 export default function FloatingAssistantButton({ onClick, hasActiveGame = false }) {
+  const { canAccessVoiceAi } = useEntitlements();
+
   return (
     <button
       type="button"
@@ -11,7 +14,7 @@ export default function FloatingAssistantButton({ onClick, hasActiveGame = false
         hasActiveGame ? 'bottom-6 md:bottom-8' : 'bottom-20 md:bottom-24 lg:bottom-6'
       }`}
       aria-label="Open SmritiCare Voice Assistant"
-      title="Ask Smriti — Your AI Care Companion"
+      title={canAccessVoiceAi ? 'Ask Smriti — Your AI Care Companion' : 'Smriti Voice AI Companion (Premium)'}
     >
       {/* Live status dot */}
       <span className="relative flex h-3 w-3 shrink-0">
@@ -27,8 +30,15 @@ export default function FloatingAssistantButton({ onClick, hasActiveGame = false
         {hasActiveGame ? 'Ask Smriti' : 'Ask Smriti'}
       </span>
 
-      {/* Mic icon */}
-      <Mic className="w-4 h-4 text-[#86EFAC] shrink-0" />
+      {/* Mic icon or Pro badge */}
+      {canAccessVoiceAi ? (
+        <Mic className="w-4 h-4 text-[#86EFAC] shrink-0" />
+      ) : (
+        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-400/20 text-amber-300 font-black flex items-center gap-0.5">
+          <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+          <span>PRO</span>
+        </span>
+      )}
     </button>
   );
 }

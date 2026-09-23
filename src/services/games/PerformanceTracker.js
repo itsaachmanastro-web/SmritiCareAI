@@ -10,7 +10,8 @@ import {
   getUserDifficultyProfile,
   GAME_TYPE_DOMAINS,
   scoreToDiscreteLevel,
-  getAdaptiveSupportMessage
+  getAdaptiveSupportMessage,
+  evaluateAdaptationResult
 } from './AdaptiveDifficultyEngine.js';
 import { markChallengeUsed } from './VarietyManager.js';
 
@@ -157,11 +158,21 @@ export async function recordChallengeResult({
     contentHash
   });
 
+  const adaptation = evaluateAdaptationResult({
+    difficultyBefore,
+    difficultyAfter: newDifficulty,
+    accuracy: score,
+    mistakes: streak.consecutiveMistakes,
+    consecutiveCorrect: streak.consecutiveCorrect,
+    consecutiveMistakes: streak.consecutiveMistakes
+  });
+
   return {
     difficultyBefore,
     newDifficulty,
     discreteLevel,
     encouragementMessage,
-    streak: { ...streak }
+    streak: { ...streak },
+    adaptation
   };
 }

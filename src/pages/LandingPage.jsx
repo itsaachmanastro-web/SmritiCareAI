@@ -174,312 +174,299 @@ export default function LandingPage({ defaultSection = null }) {
 
   return (
     <div className="min-h-screen flex flex-col justify-between relative z-10 overflow-x-hidden selection:bg-[#143D30] selection:text-white">
-      {/* Corner Botanical Leaves (Matching Reference Art) */}
-      <div className="absolute top-0 left-0 pointer-events-none z-0 select-none overflow-hidden w-64 h-64 sm:w-96 sm:h-96 opacity-35 dark:opacity-20 transition-opacity">
+      {/* Corner Botanical Organic Leaf Accents (Subtle, Clean) */}
+      <div className="absolute top-0 left-0 pointer-events-none z-0 select-none overflow-hidden w-64 h-64 sm:w-96 sm:h-96 opacity-25 dark:opacity-15 transition-opacity">
         <svg viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[#143D30] dark:text-[#34D399]">
-          <path d="M-20 -20 C80 20, 140 100, 160 210 C130 190, 70 160, -20 -20 Z" fill="currentColor" fillOpacity="0.15" />
-          <path d="M-10 10 C60 50, 110 120, 120 200" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeOpacity="0.4" />
-          <path d="M50 75 C85 60, 120 70, 140 100 C115 110, 80 100, 50 75 Z" fill="currentColor" fillOpacity="0.2" />
-          <path d="M85 125 C125 115, 160 130, 175 165 C145 170, 110 155, 85 125 Z" fill="currentColor" fillOpacity="0.25" />
-          <path d="M25 40 C45 15, 80 15, 95 35 C75 50, 45 50, 25 40 Z" fill="currentColor" fillOpacity="0.18" />
+          <path d="M-20 -20 C80 20, 140 100, 160 210 C130 190, 70 160, -20 -20 Z" fill="currentColor" fillOpacity="0.12" />
+          <path d="M-10 10 C60 50, 110 120, 120 200" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.3" />
+          <path d="M50 75 C85 60, 120 70, 140 100 C115 110, 80 100, 50 75 Z" fill="currentColor" fillOpacity="0.15" />
+          <path d="M85 125 C125 115, 160 130, 175 165 C145 170, 110 155, 85 125 Z" fill="currentColor" fillOpacity="0.18" />
         </svg>
       </div>
 
-      <div className="absolute bottom-20 left-0 pointer-events-none z-0 select-none overflow-hidden w-56 h-56 sm:w-80 sm:h-80 opacity-30 dark:opacity-15 transition-opacity">
+      <div className="absolute bottom-20 left-0 pointer-events-none z-0 select-none overflow-hidden w-56 h-56 sm:w-80 sm:h-80 opacity-20 dark:opacity-10 transition-opacity">
         <svg viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-[#143D30] dark:text-[#34D399]">
-          <path d="M-30 250 C40 180, 110 160, 200 170 C160 200, 100 240, -30 250 Z" fill="currentColor" fillOpacity="0.18" />
-          <path d="M10 230 C70 190, 130 180, 180 185" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.35" />
-          <path d="M60 200 C80 165, 115 160, 135 180 C115 195, 85 205, 60 200 Z" fill="currentColor" fillOpacity="0.22" />
-          <path d="M110 185 C135 155, 170 155, 185 175 C160 188, 130 192, 110 185 Z" fill="currentColor" fillOpacity="0.2" />
+          <path d="M-30 250 C40 180, 110 160, 200 170 C160 200, 100 240, -30 250 Z" fill="currentColor" fillOpacity="0.15" />
+          <path d="M10 230 C70 190, 130 180, 180 185" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeOpacity="0.25" />
         </svg>
       </div>
 
-      {/* Main Hero Section */}
-      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-10 pb-16 md:pb-24 w-full">
-        {/* Floating Ambient Cards (Desktop / Tablet Flanking Layout Matching Reference Image) */}
-        <div className="relative min-h-[580px] lg:min-h-[620px] flex flex-col items-center justify-center text-center">
+      {/* Main Hero Section (Split Layout: Left Value Proposition, Right Dashboard Preview) */}
+      <main className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-14 pb-16 md:pb-24 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 xl:gap-14 items-center">
           
-          {/* ================= LEFT FLANKING CARDS ================= */}
-          {/* Card 1: Top-Left - Play / Learn / Remember */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            onClick={() => navigate('/patient/games')}
-            className="hidden lg:flex items-center gap-3.5 absolute top-10 left-2 xl:left-8 px-4 py-3 rounded-2xl bg-white/80 dark:bg-[#0E221E]/80 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xl shadow-lg shadow-[#143D30]/5 dark:shadow-black/30 hover:scale-105 transition-all cursor-pointer group z-20 text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#E8F3ED] dark:bg-[#143D30]/60 flex items-center justify-center text-[#143D30] dark:text-[#2DD4BF] group-hover:bg-[#143D30] group-hover:text-white transition-colors shrink-0">
-              <Gamepad2 className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[#142823] dark:text-[#F0F6F4] leading-tight">Play / Learn / Remember</p>
-              <p className="text-[11px] font-medium text-[#5C756D] dark:text-[#7E9C94] mt-0.5">Adaptive Brain Games</p>
-            </div>
-          </motion.div>
-
-          {/* Card 2: Mid-Left - Connected Across Generations */}
-          <motion.div
-            initial={{ opacity: 0, x: -30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            onClick={() => navigate('/community')}
-            className="hidden lg:flex items-center gap-3.5 absolute top-44 left-0 xl:left-4 px-4 py-3 rounded-2xl bg-white/80 dark:bg-[#0E221E]/80 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xl shadow-lg shadow-[#143D30]/5 dark:shadow-black/30 hover:scale-105 transition-all cursor-pointer group z-20 text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#E8F3ED] dark:bg-[#143D30]/60 flex items-center justify-center text-[#143D30] dark:text-[#2DD4BF] group-hover:bg-[#143D30] group-hover:text-white transition-colors shrink-0">
-              <Users className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[#142823] dark:text-[#F0F6F4] leading-tight">Connected</p>
-              <p className="text-[11px] font-medium text-[#5C756D] dark:text-[#7E9C94] mt-0.5">Across Generations</p>
-            </div>
-          </motion.div>
-
-          {/* Card 3: Bottom-Left - Inspiring Quote Pill */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="hidden lg:flex items-center gap-3 absolute bottom-6 left-2 xl:left-6 max-w-xs px-4 py-3 rounded-2xl bg-white/80 dark:bg-[#0E221E]/80 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xl shadow-lg shadow-[#143D30]/5 dark:shadow-black/30 z-20 text-left"
-          >
-            <Quote className="w-5 h-5 text-[#143D30]/40 dark:text-[#2DD4BF]/40 shrink-0 self-start mt-0.5" />
-            <p className="font-serif italic text-xs md:text-sm text-[#3D574F] dark:text-[#9EB3A8] leading-snug">
-              {isDark 
-                ? '“Technology with heart. For brighter tomorrows.”' 
-                : '“A kinder tomorrow for every generation.”'}
-            </p>
-          </motion.div>
-
-          {/* ================= RIGHT FLANKING CARDS ================= */}
-          {/* Card 4: Top-Right - Healthier Minds */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            onClick={() => navigate('/role-select')}
-            className="hidden lg:flex items-center gap-3.5 absolute top-10 right-2 xl:right-8 px-4 py-3 rounded-2xl bg-white/80 dark:bg-[#0E221E]/80 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xl shadow-lg shadow-[#143D30]/5 dark:shadow-black/30 hover:scale-105 transition-all cursor-pointer group z-20 text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#E8F3ED] dark:bg-[#143D30]/60 flex items-center justify-center text-[#143D30] dark:text-[#2DD4BF] group-hover:bg-[#143D30] group-hover:text-white transition-colors shrink-0">
-              <Brain className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[#142823] dark:text-[#F0F6F4] leading-tight">Healthier Minds</p>
-              <p className="text-[11px] font-medium text-[#5C756D] dark:text-[#7E9C94] mt-0.5">Brighter Tomorrows</p>
-            </div>
-          </motion.div>
-
-          {/* Card 5: Mid-Right - Small Steps / Big Differences */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.35 }}
-            onClick={() => navigate('/login?role=caregiver')}
-            className="hidden lg:flex items-center gap-3.5 absolute top-44 right-0 xl:right-4 px-4 py-3 rounded-2xl bg-white/80 dark:bg-[#0E221E]/80 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xl shadow-lg shadow-[#143D30]/5 dark:shadow-black/30 hover:scale-105 transition-all cursor-pointer group z-20 text-left"
-          >
-            <div className="w-10 h-10 rounded-xl bg-[#E8F3ED] dark:bg-[#143D30]/60 flex items-center justify-center text-[#E11D48] dark:text-[#FB7185] group-hover:bg-[#E11D48] group-hover:text-white transition-colors shrink-0">
-              <Heart className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[#142823] dark:text-[#F0F6F4] leading-tight">Small Steps</p>
-              <p className="text-[11px] font-medium text-[#5C756D] dark:text-[#7E9C94] mt-0.5">Big Differences</p>
-            </div>
-          </motion.div>
-
-          {/* Card 6: Bottom-Right - Video Preview Card with Real Photo */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            onClick={() => setIsVideoModalOpen(true)}
-            className="hidden lg:flex items-center gap-3.5 absolute bottom-6 right-2 xl:right-6 p-2 pr-4 rounded-2xl bg-white/85 dark:bg-[#0E221E]/85 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xl shadow-xl shadow-[#143D30]/10 dark:shadow-black/40 hover:scale-105 transition-all cursor-pointer group z-20 text-left"
-          >
-            <div className="relative w-16 h-16 rounded-xl overflow-hidden shrink-0 border border-white/40 dark:border-white/10 shadow-xs">
-              <img
-                src="/assets/images/patient-shanti.jpg"
-                alt="Shanti Devi using SmritiCare"
-                className="w-full h-full object-cover object-center group-hover:scale-110 transition-transform duration-500"
-              />
-              <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
-                <div className="w-7 h-7 rounded-full bg-white/95 text-[#143D30] flex items-center justify-center shadow-md">
-                  <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
-                </div>
-              </div>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-[#142823] dark:text-[#F0F6F4] leading-tight group-hover:text-[#143D30] dark:group-hover:text-[#2DD4BF] transition-colors">
-                See how SmritiCare helps
-              </p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#E8F3ED] dark:bg-[#143D30] text-[#143D30] dark:text-[#2DD4BF]">
-                  02:14
-                </span>
-                <span className="text-[10px] text-[#5C756D] dark:text-[#7E9C94] font-medium">Watch story</span>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* ================= CENTER BRAND & HEADLINE ================= */}
-          <div className="max-w-3xl mx-auto flex flex-col items-center z-10 px-2">
-            {/* Dual-Tone Botanical Tree Emblem (Matching Reference) */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className="mb-4"
-            >
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-white/90 dark:bg-[#0E221E]/90 border border-[#D5E5DA] dark:border-[#1E4D3D] shadow-xl shadow-[#143D30]/5 dark:shadow-black/50 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 hover:rotate-3 transition-transform">
-                <SmritiLogo className="w-full h-full text-[#143D30] dark:text-[#2DD4BF] drop-shadow-sm" showText={false} />
-              </div>
-            </motion.div>
-
-            {/* Brand Title & Subtitle */}
+          {/* ================= LEFT COLUMN: HERO VALUE PROP & CTAS ================= */}
+          <div className="lg:col-span-6 xl:col-span-6 space-y-6 text-left">
+            {/* Category / Mission Badge */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="flex flex-col items-center"
+              transition={{ duration: 0.4 }}
             >
-              <h1 className="font-serif font-bold text-3xl sm:text-4xl tracking-tight text-[#142823] dark:text-white">
-                Smriti<span className="text-[#0D9488] dark:text-[#2DD4BF]">Care</span>
-              </h1>
-              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#5C756D] dark:text-[#7E9C94] mt-1 mb-4">
-                {t('hero.brandLine') || 'AI FOR BRIGHTER MINDS'}
-              </p>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/85 dark:bg-[#0E221E]/85 border border-[#DFEAE2] dark:border-[#183830] text-xs font-bold text-[#143D30] dark:text-[#2DD4BF] shadow-xs backdrop-blur-md">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>{t('hero.brandLine') || 'Culturally Grounded • Voice-First Cognitive Care'}</span>
+              </div>
             </motion.div>
 
-            {/* Main Hero Serif Headline (Exact Reference Copy & Styling) */}
-            <motion.h2
+            {/* Editorial Serif Headline */}
+            <motion.h1
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-normal tracking-tight text-[#142823] dark:text-[#F0F6F4] leading-[1.18] text-balance max-w-2xl"
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="font-serif text-3xl sm:text-4xl md:text-5xl lg:text-[50px] font-bold tracking-tight text-[#142823] dark:text-[#F0F6F4] leading-[1.14] text-balance"
             >
               {t('hero.tagline') || 'Empowering Every Memory. Enriching Every Moment.'}
-            </motion.h2>
+            </motion.h1>
 
-            {/* Subtext Body */}
+            {/* Supporting Subheadline */}
             <motion.p
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-xs sm:text-sm md:text-base text-[#526B63] dark:text-[#9EB3A8] font-normal max-w-2xl mx-auto mt-4 leading-relaxed text-balance"
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="text-sm sm:text-base text-[#526B63] dark:text-[#9EB3A8] font-normal leading-relaxed text-balance max-w-xl"
             >
               {t('hero.subtagline') || 'SmritiCare brings together AI-powered cognitive games, personalized memory support, gentle reminders and voice-enabled assistance to help older adults stay engaged, independent and connected — while giving caregivers meaningful insight into their everyday cognitive journey.'}
             </motion.p>
 
-            {/* Primary Action Buttons (Pill CTAs Matching Reference) */}
+            {/* CTA Buttons Row */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5 w-full sm:w-auto"
+              transition={{ duration: 0.5, delay: 0.3 }}
+              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-2"
             >
-              {/* Button 1: Get Started Pill */}
+              {/* Primary CTA: "Start Free Trial" */}
               <button
                 type="button"
                 onClick={() => navigate('/role-select')}
-                className="w-full sm:w-auto min-h-[52px] px-8 py-3.5 rounded-full bg-[#143D30] hover:bg-[#0E2D23] dark:bg-[#10B981] dark:hover:bg-[#059669] text-white dark:text-[#06110F] font-bold text-sm sm:text-base shadow-lg shadow-[#143D30]/20 dark:shadow-emerald-500/20 transform hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
+                className="min-h-[50px] px-8 py-3.5 rounded-full bg-[#143D30] hover:bg-[#0E2D23] dark:bg-[#2DD4BF] dark:hover:bg-[#20B8A5] text-white dark:text-[#06110F] font-bold text-sm sm:text-base shadow-lg shadow-[#143D30]/20 dark:shadow-teal-500/20 transform hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2.5 cursor-pointer"
               >
-                <span>{t('getStarted') || 'Get Started'}</span>
+                <span>{t('hero.startFreeTrial') || 'Start Free Trial'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
-              {/* Button 2: Senior PIN Sign-in Pill */}
+              {/* Secondary CTA: "Senior PIN Sign-in" */}
               <button
                 type="button"
                 onClick={() => navigate('/login?role=patient')}
-                className="w-full sm:w-auto min-h-[52px] px-7 py-3.5 rounded-full bg-white/90 dark:bg-[#0E221E]/90 hover:bg-white dark:hover:bg-[#132A24] text-[#142823] dark:text-[#E8F3EF] border border-[#CBDED3] dark:border-[#1E4D3D] font-bold text-sm sm:text-base shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
+                className="min-h-[50px] px-6 py-3.5 rounded-full bg-white/90 dark:bg-[#0E221E]/90 hover:bg-white dark:hover:bg-[#132A24] text-[#142823] dark:text-[#E8F3EF] border border-[#CBDED3] dark:border-[#1E4D3D] font-bold text-sm sm:text-base shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer backdrop-blur-md"
               >
                 <Lock className="w-4 h-4 text-[#143D30] dark:text-[#2DD4BF]" />
                 <span>Senior PIN Sign-in</span>
               </button>
             </motion.div>
 
-            {/* 3 Feature Badges / Chips under CTAs (Matching Reference) */}
+            {/* Key Trust Checkmarks */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.5 }}
-              className="flex flex-wrap items-center justify-center gap-2.5 mt-7"
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="flex flex-wrap items-center gap-4 sm:gap-6 pt-3 text-xs text-[#5C756D] dark:text-[#7E9C94] font-semibold"
             >
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/70 dark:bg-[#0E221E]/70 text-[#3D574F] dark:text-[#A3C0B7] border border-[#DFEAE2] dark:border-[#183830] text-xs font-semibold shadow-xs backdrop-blur-md">
-                <Globe className="w-3.5 h-3.5 text-[#0D9488] dark:text-[#2DD4BF]" />
-                <span>AI Assistance</span>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>100% Offline Dexie</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/70 dark:bg-[#0E221E]/70 text-[#3D574F] dark:text-[#A3C0B7] border border-[#DFEAE2] dark:border-[#183830] text-xs font-semibold shadow-xs backdrop-blur-md">
-                <Radio className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Voice-Enabled</span>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>Voice-Enabled Audio</span>
               </div>
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/70 dark:bg-[#0E221E]/70 text-[#3D574F] dark:text-[#A3C0B7] border border-[#DFEAE2] dark:border-[#183830] text-xs font-semibold shadow-xs backdrop-blur-md">
-                <UserCheck className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                <span>Personalized Cognitive Training</span>
+              <div className="flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span>5 Regional Languages</span>
               </div>
             </motion.div>
+          </div>
 
-            {/* Mobile-Only Ambient Cards Quick Links */}
-            <div className="grid grid-cols-2 gap-2.5 w-full mt-8 lg:hidden">
-              <button
-                type="button"
-                onClick={() => navigate('/patient/games')}
-                className="p-3 rounded-xl bg-white/80 dark:bg-[#0E221E]/80 border border-[#DFEAE2] dark:border-[#183830] text-left flex items-center gap-2.5 shadow-xs"
-              >
-                <div className="w-8 h-8 rounded-lg bg-[#E8F3ED] dark:bg-[#143D30] text-[#143D30] dark:text-[#2DD4BF] flex items-center justify-center shrink-0">
-                  <Gamepad2 className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#142823] dark:text-white truncate">Brain Games</p>
-                  <p className="text-[10px] text-[#5C756D] dark:text-[#7E9C94] truncate">Play & Remember</p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsVideoModalOpen(true)}
-                className="p-3 rounded-xl bg-white/80 dark:bg-[#0E221E]/80 border border-[#DFEAE2] dark:border-[#183830] text-left flex items-center gap-2.5 shadow-xs"
-              >
-                <div className="w-8 h-8 rounded-lg bg-[#E8F3ED] dark:bg-[#143D30] text-[#143D30] dark:text-[#2DD4BF] flex items-center justify-center shrink-0">
-                  <Play className="w-4 h-4 fill-current ml-0.5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-bold text-[#142823] dark:text-white truncate">Watch Story</p>
-                  <p className="text-[10px] text-[#5C756D] dark:text-[#7E9C94] truncate">02:14 Demo</p>
-                </div>
-              </button>
-            </div>
-
-            {/* Bottom Center Scroll Indicator (Matching Reference) */}
-            <motion.button
-              type="button"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              onClick={() => scrollToSection('about')}
-              className="mt-12 sm:mt-14 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 dark:bg-[#0E221E]/60 border border-[#DFEAE2] dark:border-[#183830] text-xs font-semibold text-[#5C756D] dark:text-[#7E9C94] hover:text-[#143D30] dark:hover:text-[#F0F6F4] transition-all cursor-pointer backdrop-blur-md shadow-xs group"
+          {/* ================= RIGHT COLUMN: PRODUCT / DASHBOARD PREVIEW ================= */}
+          <div className="lg:col-span-6 xl:col-span-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="relative"
             >
-              <span>Scroll to explore</span>
-              <ChevronDown className="w-3.5 h-3.5 group-hover:translate-y-0.5 transition-transform" />
-            </motion.button>
+              {/* Soft decorative backdrop halo */}
+              <div className="absolute -inset-2 bg-gradient-to-tr from-emerald-100/60 to-teal-50/40 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-[36px] blur-xl -z-10" />
+
+              {/* Main Dashboard Preview Card Container */}
+              <div className="bg-[#FAFDF9] dark:bg-[#081714] border border-[#DFEAE2] dark:border-[#183830] rounded-[32px] p-5 sm:p-6 shadow-2xl shadow-[#143D30]/10 dark:shadow-black/50 text-left space-y-4 select-none">
+                
+                {/* 1. App Header Strip in Mockup */}
+                <div className="flex items-center justify-between pb-3 border-b border-[#E7EFE9] dark:border-[#143029]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-[#DCF0E4] dark:bg-[#0D2318] flex items-center justify-center p-1 border border-[#BAD9C6] dark:border-[#153A28] shadow-xs">
+                      <SmritiLogo className="w-full h-full text-[#143D30] dark:text-[#2DD4BF]" showText={false} />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-[#142823] dark:text-white leading-none">SmritiCare</p>
+                      <p className="text-[10px] text-[#5C756D] dark:text-[#7E9C94] mt-0.5 font-medium">Good Morning, Bimala 👋</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="px-2.5 py-1 rounded-full bg-white dark:bg-[#0E221E] border border-[#DFEAE2] dark:border-[#183830] text-[10px] font-bold text-[#5C756D] dark:text-[#7E9C94] flex items-center gap-1.5 shadow-xs">
+                      <Clock className="w-3 h-3 text-[#0D9488] dark:text-[#2DD4BF]" />
+                      <span>Wed, 23 Apr</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Hero Memory Banner in Mockup */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#143D30] to-[#1D5443] dark:from-[#0E2922] dark:to-[#174236] text-white shadow-md relative overflow-hidden">
+                  <div className="relative z-10 max-w-xs space-y-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#A7F3D0] block">
+                      Daily Well-being
+                    </span>
+                    <h3 className="font-serif font-bold text-base sm:text-lg leading-tight">
+                      Small steps for brighter tomorrows.
+                    </h3>
+                    <p className="text-[11px] text-white/80 leading-snug font-normal">
+                      Engage in cultural activities, stay connected, and nourish your mind.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/patient/home')}
+                      className="mt-1 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#34D399] hover:bg-[#2DD4BF] text-[#06110F] text-xs font-bold transition-all shadow-sm cursor-pointer"
+                    >
+                      <span>Start Today</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Botanical leaf watermark */}
+                  <div className="absolute -right-4 -bottom-6 w-32 h-32 opacity-20 pointer-events-none">
+                    <svg viewBox="0 0 200 200" fill="none" className="w-full h-full text-white">
+                      <path d="M20 180 C80 140, 120 80, 180 20 C140 80, 80 120, 20 180 Z" fill="currentColor" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* 3. Activity Preview Grid in Mockup */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] font-bold text-[#142823] dark:text-white uppercase tracking-wider">
+                      Today's Activities
+                    </span>
+                    <span 
+                      onClick={() => navigate('/patient/games')}
+                      className="text-[10px] text-[#0D9488] dark:text-[#2DD4BF] font-semibold cursor-pointer hover:underline"
+                    >
+                      View All →
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 sm:gap-2.5">
+                    {/* Activity 1: Memory Game */}
+                    <div
+                      onClick={() => navigate('/patient/games')}
+                      className="p-2.5 rounded-xl bg-white dark:bg-[#0E221E] border border-[#DFEAE2] dark:border-[#183830] hover:border-[#BAD9C6] transition-all cursor-pointer shadow-xs group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-1.5">
+                        <Gamepad2 className="w-3.5 h-3.5" />
+                      </div>
+                      <p className="text-[11px] font-bold text-[#142823] dark:text-white leading-tight truncate">Memory Game</p>
+                      <p className="text-[9px] text-[#5C756D] dark:text-[#7E9C94] mt-0.5 truncate">Keep mind sharp</p>
+                      <div className="mt-2 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
+                        <span>Play</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </div>
+                    </div>
+
+                    {/* Activity 2: Daily Reminders */}
+                    <div
+                      onClick={() => navigate('/patient/reminders')}
+                      className="p-2.5 rounded-xl bg-white dark:bg-[#0E221E] border border-[#DFEAE2] dark:border-[#183830] hover:border-[#BAD9C6] transition-all cursor-pointer shadow-xs group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-1.5">
+                        <Activity className="w-3.5 h-3.5" />
+                      </div>
+                      <p className="text-[11px] font-bold text-[#142823] dark:text-white leading-tight truncate">Daily Routine</p>
+                      <p className="text-[9px] text-[#5C756D] dark:text-[#7E9C94] mt-0.5 truncate">Stay on track</p>
+                      <div className="mt-2 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
+                        <span>Check</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </div>
+                    </div>
+
+                    {/* Activity 3: Ask Smriti */}
+                    <div
+                      onClick={() => navigate('/assistant')}
+                      className="p-2.5 rounded-xl bg-white dark:bg-[#0E221E] border border-[#DFEAE2] dark:border-[#183830] hover:border-[#BAD9C6] transition-all cursor-pointer shadow-xs group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-1.5">
+                        <Heart className="w-3.5 h-3.5" />
+                      </div>
+                      <p className="text-[11px] font-bold text-[#142823] dark:text-white leading-tight truncate">Ask Smriti</p>
+                      <p className="text-[9px] text-[#5C756D] dark:text-[#7E9C94] mt-0.5 truncate">Voice Companion</p>
+                      <div className="mt-2 text-[10px] font-bold text-rose-600 dark:text-rose-400 flex items-center gap-0.5">
+                        <span>Talk</span>
+                        <ArrowRight className="w-2.5 h-2.5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Location & Safety Status Pill in Mockup */}
+                <div
+                  onClick={() => navigate('/patient/safety')}
+                  className="p-3 rounded-xl bg-[#E8F3ED] dark:bg-[#0D2620] border border-[#BAD9C6] dark:border-[#183830] flex items-center justify-between cursor-pointer hover:bg-[#DFEFE6] dark:hover:bg-[#113028] transition-all"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-[#143D30] dark:bg-[#12332A] text-[#2DD4BF] flex items-center justify-center shrink-0">
+                      <Shield className="w-3.5 h-3.5" />
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-[#143D30] dark:text-[#E2F5EC] block">Location & Safety</span>
+                      <span className="text-[10px] font-semibold text-emerald-700 dark:text-[#34D399] flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span>● Sharing On · Safe Zone Active</span>
+                      </span>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#143D30] dark:text-[#2DD4BF]" />
+                </div>
+              </div>
+
+              {/* Floating Ambient Story Trigger (Bottom-Right) */}
+              <div
+                onClick={() => setIsVideoModalOpen(true)}
+                className="hidden sm:flex items-center gap-3 absolute -bottom-5 -right-3 px-4 py-2.5 rounded-2xl bg-white/95 dark:bg-[#0E221E]/95 border border-[#DFEAE2] dark:border-[#183830] shadow-xl hover:scale-105 transition-all cursor-pointer z-20 backdrop-blur-md"
+              >
+                <div className="relative w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-white/50 shadow-xs">
+                  <img src="/assets/images/patient-shanti.jpg" alt="Patient Story" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <Play className="w-3.5 h-3.5 text-white fill-current" />
+                  </div>
+                </div>
+                <div className="text-left">
+                  <p className="text-xs font-bold text-[#142823] dark:text-white leading-tight">Patient Story</p>
+                  <p className="text-[10px] font-medium text-[#0D9488] dark:text-[#2DD4BF]">Watch Demo (02:14)</p>
+                </div>
+              </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Quick Cultural Motif Showcase */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 mt-16 opacity-90">
-          <div className="flex items-center gap-2 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] bg-white/70 dark:bg-[#0E221E]/70 px-4 py-2 rounded-full border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xs shadow-xs">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 md:gap-8 mt-16 sm:mt-20 opacity-90">
+          <div className="flex items-center gap-2.5 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] bg-white/75 dark:bg-[#0E221E]/75 px-4 py-2 rounded-full border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xs shadow-xs">
             <JaapiIcon className="w-5 h-5" />
             <span>Assam Jaapi Heritage</span>
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] bg-white/70 dark:bg-[#0E221E]/70 px-4 py-2 rounded-full border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xs shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] bg-white/75 dark:bg-[#0E221E]/75 px-4 py-2 rounded-full border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xs shadow-xs">
             <GamosaIcon className="w-5 h-5" />
             <span>Sacred Gamosa Motifs</span>
           </div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] bg-white/70 dark:bg-[#0E221E]/70 px-4 py-2 rounded-full border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xs shadow-xs">
+          <div className="flex items-center gap-2.5 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] bg-white/75 dark:bg-[#0E221E]/75 px-4 py-2 rounded-full border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-xs shadow-xs">
             <TeaLeafIcon className="w-5 h-5" />
             <span>Tea Garden Routines</span>
           </div>
         </div>
 
         {/* ================= DEDICATED ABOUT SECTION ================= */}
-        <section id="about" className="mt-20 scroll-mt-24">
-          <div className="bg-white/80 dark:bg-[#0E221E]/80 backdrop-blur-xl p-8 sm:p-10 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-xl text-left">
+        <section id="about" className="mt-20 sm:mt-24 scroll-mt-24">
+          <div className="bg-white/85 dark:bg-[#0E221E]/85 backdrop-blur-xl p-8 sm:p-10 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-xl text-left">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-[#EFF5F1] dark:border-[#183830]">
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-2xl bg-[#E8F3ED] dark:bg-[#143D30] flex items-center justify-center p-2 text-[#143D30] dark:text-[#2DD4BF] shadow-xs">
@@ -538,7 +525,7 @@ export default function LandingPage({ defaultSection = null }) {
         {/* ================= KEY FEATURE PILLARS ================= */}
         <div id="pillars" className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-14 text-left scroll-mt-24">
           {/* Pillar 1 */}
-          <div className="bg-white/80 dark:bg-[#0E221E]/80 backdrop-blur-xl p-6 md:p-7 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-md hover:shadow-xl hover:border-[#BAD9C6] dark:hover:border-[#2DD4BF]/40 transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white/85 dark:bg-[#0E221E]/85 backdrop-blur-xl p-6 md:p-7 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-md hover:shadow-xl hover:border-[#BAD9C6] dark:hover:border-[#2DD4BF]/40 transition-all duration-300 transform hover:-translate-y-1">
             <div className="w-12 h-12 rounded-2xl bg-[#E8F3ED] dark:bg-[#143D30] flex items-center justify-center text-[#143D30] dark:text-[#2DD4BF] mb-4 shadow-xs">
               <Brain className="w-6 h-6" />
             </div>
@@ -549,7 +536,7 @@ export default function LandingPage({ defaultSection = null }) {
           </div>
 
           {/* Pillar 2 */}
-          <div className="bg-white/80 dark:bg-[#0E221E]/80 backdrop-blur-xl p-6 md:p-7 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-md hover:shadow-xl hover:border-[#BAD9C6] dark:hover:border-[#2DD4BF]/40 transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white/85 dark:bg-[#0E221E]/85 backdrop-blur-xl p-6 md:p-7 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-md hover:shadow-xl hover:border-[#BAD9C6] dark:hover:border-[#2DD4BF]/40 transition-all duration-300 transform hover:-translate-y-1">
             <div className="w-12 h-12 rounded-2xl bg-[#FEF3C7] dark:bg-amber-950/50 flex items-center justify-center text-amber-700 dark:text-amber-300 mb-4 shadow-xs">
               <Activity className="w-6 h-6" />
             </div>
@@ -560,7 +547,7 @@ export default function LandingPage({ defaultSection = null }) {
           </div>
 
           {/* Pillar 3 */}
-          <div className="bg-white/80 dark:bg-[#0E221E]/80 backdrop-blur-xl p-6 md:p-7 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-md hover:shadow-xl hover:border-[#BAD9C6] dark:hover:border-[#2DD4BF]/40 transition-all duration-300 transform hover:-translate-y-1">
+          <div className="bg-white/85 dark:bg-[#0E221E]/85 backdrop-blur-xl p-6 md:p-7 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-md hover:shadow-xl hover:border-[#BAD9C6] dark:hover:border-[#2DD4BF]/40 transition-all duration-300 transform hover:-translate-y-1">
             <div className="w-12 h-12 rounded-2xl bg-[#E8F3ED] dark:bg-[#143D30] flex items-center justify-center text-[#143D30] dark:text-[#2DD4BF] mb-4 shadow-xs">
               <Shield className="w-6 h-6" />
             </div>
@@ -572,7 +559,7 @@ export default function LandingPage({ defaultSection = null }) {
         </div>
 
         {/* Clinical Trust Strip */}
-        <div id="features" className="mt-12 p-5 rounded-2xl bg-white/70 dark:bg-[#0E221E]/70 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-md flex flex-wrap items-center justify-around gap-4 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] shadow-xs scroll-mt-24">
+        <div id="features" className="mt-12 p-5 rounded-2xl bg-white/75 dark:bg-[#0E221E]/75 border border-[#DFEAE2] dark:border-[#183830] backdrop-blur-md flex flex-wrap items-center justify-around gap-4 text-xs font-bold text-[#3D574F] dark:text-[#A3C0B7] shadow-xs scroll-mt-24">
           <div className="flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-[#0D9488] dark:text-[#2DD4BF]" />
             <span>WCAG 2.1 AA Accessible (56px+ Touch Targets)</span>
@@ -583,13 +570,13 @@ export default function LandingPage({ defaultSection = null }) {
           </div>
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-            <span>Multilingual Spoken Audio (Assamese, Hindi, English, Bengali)</span>
+            <span>Multilingual Spoken Audio (Assamese, Hindi, English, Bengali, Manipuri)</span>
           </div>
         </div>
 
         {/* ================= DEDICATED CONTACT US SECTION ================= */}
-        <section id="contact" className="mt-20 scroll-mt-24">
-          <div className="bg-white/80 dark:bg-[#0E221E]/80 backdrop-blur-xl p-8 sm:p-10 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-xl text-left">
+        <section id="contact" className="mt-20 sm:mt-24 scroll-mt-24">
+          <div className="bg-white/85 dark:bg-[#0E221E]/85 backdrop-blur-xl p-8 sm:p-10 rounded-3xl border border-[#DFEAE2] dark:border-[#183830] shadow-xl text-left">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-[#EFF5F1] dark:border-[#183830]">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-widest text-[#0D9488] dark:text-[#2DD4BF]">

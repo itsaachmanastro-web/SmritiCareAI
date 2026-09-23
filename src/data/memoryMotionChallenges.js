@@ -1,1011 +1,377 @@
 /**
  * SmritiCare Memory Motion Challenge Dataset
  * 
- * Video-first cognitive training challenges covering Levels 1–10.
- * Designed for elderly users with culturally familiar North-Eastern & Indian daily themes.
- * Supports English (en), Hindi (hi), Assamese (as), Bengali (bn), Manipuri (mni).
+ * 4 Complete Cognitive Video Scenarios with Grounded Memory Challenges:
+ * 1. 🏠 Morning in the Kitchen (KITCHEN_MORNING)
+ * 2. 🛒 Grocery Market Routine (GROCERY_MARKET)
+ * 3. 🌳 Garden & Park Walk (GARDEN_PARK)
+ * 4. 🛏️ Bedroom Evening Routine (BEDROOM_ROUTINE)
+ * 
+ * Full 5-language localization: English (en), Hindi (hi), Assamese (as), Bengali (bn), Manipuri (mni).
  */
 
 export const MEMORY_MOTION_CHALLENGES = [
+  // ===========================================================================
+  // ROUND 1: 🏠 Morning in the Kitchen
+  // ===========================================================================
   {
-    id: 'mm-001',
-    difficulty: 2,
+    id: 'mm-k-001',
+    roundIndex: 1,
+    difficulty: 1,
     levelTier: 'easy',
-    durationSeconds: 7,
-    category: 'visual-memory',
-    cognitiveSkill: 'recognition',
-    questionType: 'direct-recall',
-    sceneType: 'tea_pouring',
-    videoUrl: '/assets/videos/memory-motion/tea-pouring.mp4',
-    posterUrl: '/assets/images/companion-light.jpg',
-    replayAllowed: true,
-    maxReplays: 2,
-    title: {
-      en: 'Morning Tea Pouring',
-      hi: 'सुबह की ताज़ा चाय',
-      as: 'ৰাতিপুৱাৰ সতেজ চাহ',
-      bn: 'সকালের তাজা চা',
-      mni: 'য়ুক্কি অয়ূককী চা'
-    },
-    description: {
-      en: 'A caregiver pours warm golden Assam tea from a metal kettle into a porcelain cup.',
-      hi: 'केतली से कप में गरम चाय डाली जा रही है।',
-      as: 'কেটলিৰ পৰা কাপত গৰম চাহ ঢালি থকা হৈছে।',
-      bn: 'কেটলি থেকে কাপে গরম চা ঢালা হচ্ছে।',
-      mni: 'কেতলীদগী খাপতা অশাংবা চা হাপ্লি।'
-    },
+    scenarioKey: 'KITCHEN_MORNING',
+    sceneType: 'KITCHEN_MORNING',
     question: {
-      en: 'What did the person pour into the cup?',
-      hi: 'व्यक्ति ने कप में क्या डाला?',
-      as: 'মানুহজনে কাপত কি ঢালিলে?',
-      bn: 'ব্যক্তিটি কাপে কী ঢাললেন?',
-      mni: 'মীওই অদুগী খাপতা করি হাপখিগে?'
+      en: 'How many ORANGES were in the fruit bowl on the counter?',
+      hi: 'काउंटर पर रखे फलों के कटोरे में कितने संतरे थे?',
+      as: 'কাউন্টাৰৰ বাটিত কেইটা কমলা আছিল?',
+      bn: 'কাউন্টারের ফলের পাত্রে কটি কমলালেবু ছিল?',
+      mni: 'কাউন্তৰগী বাতিদা কোমোলা কয়াম য়াওখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🍵',
-        text: {
-          en: 'Warm Golden Tea',
-          hi: 'गरम ताज़ा चाय',
-          as: 'গৰম সতেজ চাহ',
-          bn: 'গরম তাজা চা',
-          mni: 'অশাংবা সোণগী চা'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🍊',
-        text: {
-          en: 'Cold Orange Juice',
-          hi: 'ठंडा संतरे का रस',
-          as: 'ঠাণ্ডা কমলা ৰস',
-          bn: 'ঠান্ডা কমলার রস',
-          mni: 'অইংবা কমলাগি মহি'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🥛',
-        text: {
-          en: 'Glass of Milk',
-          hi: 'दूध का गिलास',
-          as: 'গাখীৰৰ গিলাচ',
-          bn: 'দুধের গ্লাস',
-          mni: 'শংগোই খাপ'
-        },
-        isCorrect: false
-      }
-    ],
-    correctAnswerIndex: 0,
-    explanation: {
-      en: 'The person poured warm steaming tea from the traditional kettle into the cup.',
-      hi: 'व्यक्ति ने केतली से कप में गरम चाय डाली थी।',
-      as: 'মানুহজনে পৰম্পৰাগত কেটলিৰ পৰা কাপত গৰম চাহ ঢালিছিল।',
-      bn: 'ব্যক্তিটি কেতলি থেকে কাপে গরম চা ঢেলেছিলেন।',
-      mni: 'মীওই অদুগী কেতলীদগী খাপতা অশাংবা চা হাপখি।'
-    }
-  },
-  {
-    id: 'mm-002',
-    difficulty: 2,
-    levelTier: 'easy',
-    durationSeconds: 8,
-    category: 'visual-memory',
-    cognitiveSkill: 'recognition',
-    questionType: 'feature-identification',
-    sceneType: 'flower_garden',
-    videoUrl: '/assets/videos/memory-motion/flower-garden.mp4',
-    posterUrl: '/assets/images/role-patient.jpg',
-    replayAllowed: true,
-    maxReplays: 2,
-    title: {
-      en: 'Puja Flower Gathering',
-      hi: 'पूजा के फूल चुनना',
-      as: 'পূজাৰ ফুল তোলা',
-      bn: 'পূজোর ফুল তোলা',
-      mni: 'পূজাগী হৈকৎ লোইবা'
-    },
-    description: {
-      en: 'An elder gently picks bright yellow marigolds from a veranda flowerpot into a cane basket.',
-      hi: 'बगीचे से पीले गेंदे के फूल चुने जा रहे हैं।',
-      as: 'বাৰান্দাৰ ফুলৰ টাবৰ পৰা হালধীয়া গেন্ধা ফুল তোলা হৈছে।',
-      bn: 'বারান্দার টব থেকে হলুদ গাঁদা ফুল তোলা হচ্ছে।',
-      mni: 'য়ুমথোংদগী য়াইনা য়ৌরবা সানারৈ হৈকৎ লোইরি।'
-    },
-    question: {
-      en: 'What color were the flowers picked from the garden?',
-      hi: 'बगीचे से किस रंग के फूल चुने गए?',
-      as: 'ফুলনিৰ পৰা কি ৰঙৰ ফুল তোলা হৈছিল?',
-      bn: 'বাগান থেকে কোন রঙের ফুল তোলা হয়েছিল?',
-      mni: 'লৈকোলদগী লোইখিবা লৈ অদু করম্বা মচুগীনো?'
-    },
-    options: [
-      {
-        id: 'opt-1',
-        icon: '🌼',
-        text: {
-          en: 'Bright Yellow Marigolds',
-          hi: 'चमकीले पीले गेंदे के फूल',
-          as: 'উজ্জ্বল হালধীয়া গেন্ধা ফুল',
-          bn: 'উজ্জ্বল হলুদ গাঁদা ফুল',
-          mni: 'ঙাল্লবা য়াইনা য়ৌরবা সানারৈ'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🌹',
-        text: {
-          en: 'Deep Red Roses',
-          hi: 'गहरे लाल गुलाब',
-          as: 'গাঢ় ৰঙা গোলাপ',
-          bn: 'গাঢ় লাল গোলাপ',
-          mni: 'অঙাংবা গুলাপ'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🪻',
-        text: {
-          en: 'Purple Orchids',
-          hi: 'बैंगनी आर्किड',
-          as: 'বেঙুনীয়া কপৌফুল',
-          bn: 'বেগুনী অর্কিড',
-          mni: 'লৈরাং কপৌ'
-        },
-        isCorrect: false
-      }
-    ],
-    correctAnswerIndex: 0,
-    explanation: {
-      en: 'The elder picked bright golden-yellow marigolds into the cane basket.',
-      hi: 'बुजुर्ग ने डलिया में सुंदर पीले गेंदे के फूल चुने थे।',
-      as: 'আইতাই বাঁহৰ খৰাহীত ধুনীয়া হালধীয়া গেন্ধা ফুল তুলিছিল।',
-      bn: 'ঝুড়িতে সুন্দর উজ্জ্বল হলুদ গাঁদা ফুল তোলা হয়েছিল।',
-      mni: 'পৈলাদা ধুনীয়া য়াইনা য়ৌরবা সানারৈ লোইখি।'
-    }
-  },
-  {
-    id: 'mm-003',
-    difficulty: 3,
-    levelTier: 'easy',
-    durationSeconds: 8,
-    category: 'visual-memory',
-    cognitiveSkill: 'recall',
-    questionType: 'direct-recall',
-    sceneType: 'spice_box',
-    videoUrl: '/assets/videos/memory-motion/spice-box.mp4',
-    posterUrl: '/assets/images/caregiver-hero.jpg',
-    replayAllowed: true,
-    maxReplays: 2,
-    title: {
-      en: 'Kitchen Spice Box',
-      hi: 'रसोई का मसाला डिब्बा',
-      as: 'পাকঘৰৰ মচলাৰ চপটা',
-      bn: 'রান্নাঘরের মশলার কৌটো',
-      mni: 'চাকখুমগী মসল্লা বাস্কা'
-    },
-    description: {
-      en: 'Opening a traditional circular brass spice box and picking green cardamom pods.',
-      hi: 'पीतल के डिब्बे से हरी इलायची निकाली जा रही है।',
-      as: 'পিতলৰ মচলাৰ চপটাৰ পৰা সেউজীয়া ইলাচী লোৱা হৈছে।',
-      bn: 'পিতলের মশলার কৌটো থেকে সবুজ এলাচ তোলা হচ্ছে।',
-      mni: 'পিত্তলগী বাস্কাদগী অশেংবা ইলাচী লৌখৎলি।'
-    },
-    question: {
-      en: 'Which spice did the person pick from the round brass box?',
-      hi: 'गोल डिब्बे से कौन सा मसाला निकाला गया?',
-      as: 'ঘূৰণীয়া চপটাটোৰ পৰা কি মচলা লোৱা হৈছিল?',
-      bn: 'গোল কৌটোটি থেকে কোন মশলাটি তোলা হয়েছিল?',
-      mni: 'কোইবা বাস্কা অদুদগী করম্বা মসল্লা লৌখৎখিগে?'
-    },
-    options: [
-      {
-        id: 'opt-1',
-        icon: '🫚',
-        text: {
-          en: 'Dry Ginger Root',
-          hi: 'सूखा सोंठ / अदरक',
-          as: 'শুকান আদা',
-          bn: 'শুকনো আদা',
-          mni: 'অকংবা শিঙ'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-2',
-        icon: '🌿',
-        text: {
-          en: 'Green Cardamom (Elaichi)',
-          hi: 'हरी इलायची',
-          as: 'সেউজীয়া ইলাচী',
-          bn: 'সবুজ এলাচ',
-          mni: 'অশেংবা ইলাচী'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-3',
-        icon: '🌶️',
-        text: {
-          en: 'Red Chilli Powder',
-          hi: 'लाल मिर्च पाउडर',
-          as: 'ৰঙা জলকীয়া গুড়ি',
-          bn: 'লাল লঙ্কা গুঁড়ো',
-          mni: 'অঙাংবা মোরোক গুন্দা'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '🍊', text: { en: '1 Orange', hi: '1 संतरा', as: '১টা কমলা', bn: '১টি কমলালেবু', mni: 'কোমোলা ১' }, isCorrect: false },
+      { id: 'opt-2', icon: '🍊🍊', text: { en: '2 Oranges', hi: '2 संतरे', as: '২টা কমলা', bn: '২টি কমলালেবু', mni: 'কোমোলা ২' }, isCorrect: true },
+      { id: 'opt-3', icon: '🍊🍊🍊', text: { en: '3 Oranges', hi: '3 संतरे', as: '৩টা কমলা', bn: '৩টি কমলালেবু', mni: 'কোমোলা ৩' }, isCorrect: false },
+      { id: 'opt-4', icon: '🍊🍊🍊🍊', text: { en: '4 Oranges', hi: '4 संतरे', as: '৪টা কমলা', bn: '৪টি কমলালেবু', mni: 'কোমোলা ৪' }, isCorrect: false }
     ],
     correctAnswerIndex: 1,
     explanation: {
-      en: 'Green cardamom pods were picked from the center section of the spice container.',
-      hi: 'मसाले के डिब्बे के बीच वाले हिस्से से हरी इलायची निकाली गई थी।',
-      as: 'মচলাৰ চপটাটোৰ মাজৰ অংশৰ পৰা সেউজীয়া ইলাচী লোৱা হৈছিল।',
-      bn: 'মশলার কৌটোর মাঝখান থেকে সবুজ এলাচ নেওয়া হয়েছিল।',
-      mni: 'বাস্কা অদুগী ময়ায়দগী অশেংবা ইলাচী লৌখৎখি।'
+      en: 'There were exactly 2 bright oranges resting alongside the 3 red apples in the wooden fruit bowl.',
+      hi: 'लकड़ी के कटोरे में 3 सेबों के साथ ठीक 2 संतरे रखे हुए थे।',
+      as: 'কাঠৰ বাটিটোত ৩টা ৰঙা আপেলৰ সৈতে সঠিকভাৱে ২টা কমলা আছিল।',
+      bn: 'কাঠের বাটিতে ৩টি লাল আপেলের সাথে ঠিক ২টি কমলালেবু ছিল।',
+      mni: 'উগী বাটি মনুংদা সেব ৩গা লোয়ননা কোমোলা ২ য়াওখি।'
     }
   },
   {
-    id: 'mm-004',
-    difficulty: 4,
-    levelTier: 'medium',
-    durationSeconds: 10,
-    category: 'sequence',
-    cognitiveSkill: 'sequence',
-    questionType: 'sequence-order',
-    sceneType: 'diya_lighting',
-    videoUrl: '/assets/videos/memory-motion/diya-lighting.mp4',
-    posterUrl: '/assets/images/pattern-art.jpg',
-    replayAllowed: true,
-    maxReplays: 1,
-    title: {
-      en: 'Evening Sandhya Diya',
-      hi: 'शाम का दीया जलाना',
-      as: 'সন্ধ্যা চাকি জ্বলোৱা',
-      bn: 'সন্ধ্যায় প্রদীপ জ্বালানো',
-      mni: 'নুমিদাংগী থা সাকপা'
-    },
-    description: {
-      en: 'Lighting a mustard oil clay diya, praying with folded hands, and placing it near the door.',
-      hi: 'मिट्टी का दीया जलाकर दरवाजे के पास रखा गया।',
-      as: 'মাটিৰ চাকিটো জ্বলাই দুৱাৰৰ কাষত ৰখা হৈছে।',
-      bn: 'মাটির প্রদীপ জ্বালিয়ে দরজার কাছে রাখা হলো।',
-      mni: 'লৈবাক্কী থা সাক্তুনা থোংগোলদা থম্লি।'
-    },
+    id: 'mm-k-002',
+    roundIndex: 1,
+    difficulty: 1,
+    levelTier: 'easy',
+    scenarioKey: 'KITCHEN_MORNING',
+    sceneType: 'KITCHEN_MORNING',
     question: {
-      en: 'What action happened immediately AFTER lighting the diya flame?',
-      hi: 'दीया जलाने के तुरंत बाद क्या किया गया?',
-      as: 'চাকিটো জ্বলোৱাৰ ঠিক পিছত কি কৰা হ’ল?',
-      bn: 'প্রদীপ জ্বালানোর ঠিক পরেই কী করা হয়েছিল?',
-      mni: 'থা সাক্লবা মতুংদা খূদক্তা করি তৌখিগে?'
+      en: 'What COLOR was the cup that the woman picked up?',
+      hi: 'महिला ने किस रंग का कप उठाया था?',
+      as: 'মহিলাগৰাকীয়ে কি ৰঙৰ কাপ তুলি লৈছিল?',
+      bn: 'মহিলাটি কোন রঙের কাপটি তুলেছিলেন?',
+      mni: 'নুপী অদুগী করম্বা মচুগী খাপ লৌখৎখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🙏',
-        text: {
-          en: 'Bowed with folded hands in prayer',
-          hi: 'हाथ जोड़कर प्रणाम किया',
-          as: 'হাতযোৰ কৰি সেৱা কৰিলে',
-          bn: 'হাতজোড় করে প্রণাম করলেন',
-          mni: 'খুৎ লোইনা খুরুমখি'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🚪',
-        text: {
-          en: 'Closed and locked the front door',
-          hi: 'मुख्य दरवाजा बंद किया',
-          as: 'মূল দুৱাৰখন বন্ধ কৰিলে',
-          bn: 'প্রধান দরজা বন্ধ করলেন',
-          mni: 'থোং পুংনা থিংজিনখি'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🔔',
-        text: {
-          en: 'Blew the conch shell loudly',
-          hi: 'जोर से शंख बजाया',
-          as: 'শংখ বজালে',
-          bn: 'শঙ্খ বাজালেন',
-          mni: 'শংখ খুংখি'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '🧹',
-        text: {
-          en: 'Swept the threshold with broom',
-          hi: 'झाड़ू लगाई',
-          as: 'ঝাৰু দিলে',
-          bn: 'ঝাড়ু দিলেন',
-          mni: 'সম্বাল শেংদোকখি'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '🔴', text: { en: 'Bright Red', hi: 'चमकीला लाल', as: 'উজ্জ্বল ৰঙা', bn: 'উজ্জ্বল লাল', mni: 'ঙাল্লবা অঙাংবা' }, isCorrect: true },
+      { id: 'opt-2', icon: '🔵', text: { en: 'Ocean Blue', hi: 'गहरा नीला', as: 'গাঢ় নীলা', bn: 'গাঢ় নীল', mni: 'অচৌবা নীলা' }, isCorrect: false },
+      { id: 'opt-3', icon: '🟢', text: { en: 'Leaf Green', hi: 'पत्ते जैसा हरा', as: 'পাত সেউজীয়া', bn: 'সবুজ', mni: 'অশেংবা' }, isCorrect: false },
+      { id: 'opt-4', icon: '🟡', text: { en: 'Sunny Yellow', hi: 'पीला', as: 'হালধীয়া', bn: 'হলুদ', mni: 'য়াইঙাংবা' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'Right after the diya was lit, the elder bowed reverently with folded hands before placing it.',
-      hi: 'दीया जलाने के बाद बुजुर्ग ने हाथ जोड़कर प्रणाम किया था।',
-      as: 'চাকি জ্বলোৱাৰ পিছতে আইতাই হাতযোৰ কৰি মূৰ দোৱাই সেৱা কৰিছিল।',
-      bn: 'প্রদীপ জ্বালানোর পরেই শ্রদ্ধার সাথে হাতজোড় করে প্রণাম করা হয়েছিল।',
-      mni: 'থা সাক্লবা মতুংদা খুৎ লোইনা শ্রদ্ধা তৌজখি।'
+      en: 'The woman picked up a bright red ceramic mug from the marble island counter.',
+      hi: 'महिला ने मार्बल काउंटर से एक चमकदार लाल कप उठाया था।',
+      as: 'তেখেতে মাৰ্বল কাউন্টাৰৰ পৰা উজ্জ্বল ৰঙা কাপটো তুলি লৈছিল।',
+      bn: 'তিনি মার্বেল কাউন্টার থেকে একটি উজ্জ্বল লাল কাপ তুলেছিলেন।',
+      mni: 'মহাক্না কাউন্তৰদগী ঙাল্লবা অঙাংবা খাপ অদু লৌখৎখি।'
     }
   },
   {
-    id: 'mm-005',
-    difficulty: 5,
-    levelTier: 'medium',
-    durationSeconds: 11,
-    category: 'attention',
-    cognitiveSkill: 'attention',
-    questionType: 'feature-identification',
-    sceneType: 'silk_weaving',
-    videoUrl: '/assets/videos/memory-motion/silk-weaving.mp4',
-    posterUrl: '/assets/images/pattern-art.jpg',
-    replayAllowed: true,
-    maxReplays: 1,
-    title: {
-      en: 'Weaver’s Silk Spools',
-      hi: 'बुनकर की रेशमी रीलों का चयन',
-      as: 'তাঁতৰ ৰেচমৰ মাকো বাছনি',
-      bn: 'তাঁতের রেশমি মাকু নির্বাচন',
-      mni: 'খোংজাংগী লৈশাং মাকু'
-    },
-    description: {
-      en: 'At a traditional handloom, selecting a brilliant golden Muga silk bobbin from a rack of threads.',
-      hi: 'तांत पर सुनहरी रेशम की रील चुनी जा रही है।',
-      as: 'তাঁতশালত ৰেকৰ পৰা সোণালী মুগা ৰেচমৰ মাকো লোৱা হৈছে।',
-      bn: 'তাঁতের তাকে সোনালী মুগা রেশমের মাকু বাছা হচ্ছে।',
-      mni: 'খোংজাংগী রেক অদুদগী সোণালী মুগা লৈশাং লৌরি।'
-    },
+    id: 'mm-k-003',
+    roundIndex: 1,
+    difficulty: 2,
+    levelTier: 'easy',
+    scenarioKey: 'KITCHEN_MORNING',
+    sceneType: 'KITCHEN_MORNING',
     question: {
-      en: 'Which color silk spool did the weaver pick from the loom rack?',
-      hi: 'बुनकर ने रैक से किस रंग की रेशम की रील उठाई?',
-      as: 'তাঁতীয়ে তাঁতশালৰ ৰেকৰ পৰা কি ৰঙৰ ৰেচমৰ মাকো ল’লে?',
-      bn: 'তাঁতি তাঁত থেকে কোন রঙের রেশম মাকু তুলেছিলেন?',
-      mni: 'খোংজাং রুদগী করম্বা মচুগী লৈশাং লৌখৎখিগে?'
+      en: 'What did the person do right AFTER picking up the red cup?',
+      hi: 'लाल कप उठाने के तुरंत बाद व्यक्ति ने क्या किया?',
+      as: 'ৰঙা কাপটো তুলি লোৱাৰ ঠিক পিছতে কি কৰিলে?',
+      bn: 'লাল কাপটি তোলার ঠিক পরেই ব্যক্তিটি কী করেছিলেন?',
+      mni: 'অঙাংবা খাপ লৌখৎলবা মতুংদা মথংদা করি তৌখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🧵',
-        text: {
-          en: 'Golden Assam Muga Silk',
-          hi: 'सुनहरी असमिया मूंगा सिल्क',
-          as: 'সোণালী অসমীয়া মুগা সূতা',
-          bn: 'সোনালী আসাম মুগা রেশম',
-          mni: 'সোণালী অসাম মুগা লৈশাং'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🧶',
-        text: {
-          en: 'Deep Indigo Blue Cotton',
-          hi: 'गहरा नीला सूती धागा',
-          as: 'গাঢ় নীল কপাহী সূতা',
-          bn: 'গাঢ় নীল সুতি সুতো',
-          mni: 'অচৌবা নীলা লৈশাং'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🧶',
-        text: {
-          en: 'Bright Silver Grey Yarn',
-          hi: 'सफेद चमकीला धागा',
-          as: 'ৰূপালী সূতা',
-          bn: 'রূপোলী সুতো',
-          mni: 'লুপা মচুগী লৈশাং'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '🪡',
-        text: {
-          en: 'Emerald Green Wool',
-          hi: 'हरा ऊनी धागा',
-          as: 'সেউজীয়া উল সূতা',
-          bn: 'সবুজ উলের সুতো',
-          mni: 'অশেংবা উল'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '🚰', text: { en: 'Filled the cup with water from the glass pitcher', hi: 'कांच के जग से कप में पानी भरा', as: 'কাঁচৰ জগৰ পৰা কাপত পানী ঢালিলে', bn: 'কাচের জগ থেকে কাপে জল ভরলেন', mni: 'গ্লাসকী জগদগী খাপতা ঈশিং হাপখি' }, isCorrect: true },
+      { id: 'opt-2', icon: '🪑', text: { en: 'Immediately sat down on the chair', hi: 'तुरंत कुर्सी पर बैठ गए', as: 'লগে লগে চকীত বহিল', bn: 'সঙ্গে সঙ্গে চেয়ারে বসলেন', mni: 'খুদক্তা চৌকিদা ফমখি' }, isCorrect: false },
+      { id: 'opt-3', icon: '🔑', text: { en: 'Picked up the car keys', hi: 'चाबियां उठाईं', as: 'চাবিৰ থোপা তুলি ল’লে', bn: 'গাড়ির চাবি তুললেন', mni: 'চাবি লৌখৎখি' }, isCorrect: false },
+      { id: 'opt-4', icon: '🚪', text: { en: 'Walked out of the kitchen', hi: 'रसोई से बाहर चले गए', as: 'পাকঘৰৰ পৰা ওলাই গ’ল', bn: 'রান্নাঘর থেকে বেরিয়ে গেলেন', mni: 'চাকখুমদগী থোকখি' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'The weaver picked the gleaming golden Muga silk bobbin to weave the border motif.',
-      hi: 'बुनकर ने किनारे की बुनाई के लिए सुनहरी मूंगा रेशम की रील चुनी थी।',
-      as: 'তাঁতীয়ে পাৰি ফুল বাছিবলৈ উজ্জ্বল সোণালী মুগা সূতাৰ মাকো লৈছিল।',
-      bn: 'তাঁতি পাড়ের নকশার জন্য সোনালী মুগা রেশমের মাকু বেছে নিয়েছিলেন।',
-      mni: 'খোংজাংগী পাৰি য়ৌনবা সোণালী মুগা লৈশাং লৌখৎখি।'
+      en: 'Right after picking up the red cup, the person poured fresh water into it from the glass pitcher.',
+      hi: 'लाल कप उठाने के बाद उन्होंने कांच के जग से उसमें पानी भरा।',
+      as: 'ৰঙা কাপটো তুলি লোৱাৰ পিছত তেখেতে কাঁচৰ জগৰ পৰা পানী ঢালিছিল।',
+      bn: 'লাল কাপ তোলার পর তিনি কাচের জগ থেকে তাতে জল ভরেছিলেন।',
+      mni: 'খাপ লৌখৎলবা মতুংদা জগদগী ঈশিং হাপখি।'
+    }
+  },
+
+  // ===========================================================================
+  // ROUND 2: 🛒 Grocery Market Routine
+  // ===========================================================================
+  {
+    id: 'mm-m-001',
+    roundIndex: 2,
+    difficulty: 2,
+    levelTier: 'easy',
+    scenarioKey: 'GROCERY_MARKET',
+    sceneType: 'GROCERY_MARKET',
+    question: {
+      en: 'How many yellow BANANAS were placed in the shopping basket?',
+      hi: 'शॉपिंग बास्केट में कितने पीले केले रखे गए थे?',
+      as: 'বজাৰৰ খৰাহীত কেইটা হালধীয়া কল থোৱা হৈছিল?',
+      bn: 'বাজারের ঝুড়িতে কটি হলুদ কলা রাখা হয়েছিল?',
+      mni: 'পৈলাদা য়াইঙাংবা চাফাবা চোম্প্রা কয়াম হাপখিগে?'
+    },
+    options: [
+      { id: 'opt-1', icon: '🍌', text: { en: '1 Banana', hi: '1 केला', as: '১টা কল', bn: '১টি কলা', mni: 'চোম্প্রা ১' }, isCorrect: false },
+      { id: 'opt-2', icon: '🍌🍌', text: { en: '2 Bananas', hi: '2 केले', as: '২টা কল', bn: '২টি কলা', mni: 'চোম্প্রা ২' }, isCorrect: true },
+      { id: 'opt-3', icon: '🍌🍌🍌', text: { en: '3 Bananas', hi: '3 केले', as: '৩টা কল', bn: '৩টি কলা', mni: 'চোম্প্রা ৩' }, isCorrect: false },
+      { id: 'opt-4', icon: '🍌🍌🍌🍌', text: { en: '4 Bananas', hi: '4 केले', as: '৪টা কল', bn: '৪টি কলা', mni: 'চোম্প্রা ৪' }, isCorrect: false }
+    ],
+    correctAnswerIndex: 1,
+    explanation: {
+      en: 'The elder selected exactly 2 ripe yellow bananas and gently placed them into the green woven basket.',
+      hi: 'बुजुर्ग ने ठीक 2 पके पीले केले चुनकर हरी टोकरी में रखे थे।',
+      as: 'আইতাই সঠিকভাৱে ২টা পকা হালধীয়া কল বাচি সেউজীয়া খৰাহীত থৈছিল।',
+      bn: 'ব্যক্তিটি ঠিক ২টি পাকা হলুদ কলা বেছে সবুজ ঝুড়িতে রেখেছিলেন।',
+      mni: 'মীওই অদুগী য়াইঙাংবা চাফাবা চোম্প্রা ২ খন্দুনা পৈলাদা হাপখি।'
     }
   },
   {
-    id: 'mm-006',
-    difficulty: 5,
-    levelTier: 'medium',
-    durationSeconds: 12,
-    category: 'visual-memory',
-    cognitiveSkill: 'working-memory',
-    questionType: 'detail-count',
-    sceneType: 'fruit_tray',
-    videoUrl: '/assets/videos/memory-motion/fruit-tray.mp4',
-    posterUrl: '/assets/images/auth-patient.jpg',
-    replayAllowed: true,
-    maxReplays: 1,
-    title: {
-      en: 'Bell-Metal Xorai Fruits',
-      hi: 'सराई पर फल सजाना',
-      as: 'শৰাইত ফল-মূল সজোৱা',
-      bn: 'শরাইয়ে ফল সাজানো',
-      mni: 'খোংজেম্বদা হৈ-মরোং থম্বা'
-    },
-    description: {
-      en: 'Arranging fresh ripe bananas and red apples onto a traditional pedestal bell-metal xorai.',
-      hi: 'पीतल की सराई में केले और सेब सजाए जा रहे हैं।',
-      as: 'পিতলৰ শৰাইখনত পকা কল আৰু ৰঙা আপেল সজাই থকা হৈছে।',
-      bn: 'পিতলের শরাইতে কলা এবং আপেল সাজানো হচ্ছে।',
-      mni: 'খোংজেম্বদা চাফাবা চোম্প্রা অমসুং সেব থম্লি।'
-    },
+    id: 'mm-m-002',
+    roundIndex: 2,
+    difficulty: 2,
+    levelTier: 'easy',
+    scenarioKey: 'GROCERY_MARKET',
+    sceneType: 'GROCERY_MARKET',
     question: {
-      en: 'How many bananas were placed onto the xorai tray?',
-      hi: 'सराई में कितने केले रखे गए थे?',
-      as: 'শৰাইখনত কেইটা কল ৰখা হৈছিল?',
-      bn: 'শরাইয়ের ওপর কয়টি কলা রাখা হয়েছিল?',
-      mni: 'খোংজেম্ব অদুগী মথক্তা চাফাবা চোম্প্রা কয়া থমখিগে?'
+      en: 'What item did the person pick up FIRST upon entering the market?',
+      hi: 'बाजार में प्रवेश करने के बाद व्यक्ति ने सबसे पहले क्या लिया?',
+      as: 'দোকানলৈ সোমাই প্ৰথমে কি বস্তু তুলি ল’লে?',
+      bn: 'দোকানে ঢোকার পর ব্যক্তিটি সবার প্রথমে কী তুলে নিলেন?',
+      mni: 'কৈথেলদা চঙলক্লগা অহানবদা করি পোৎ লৌখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🍌',
-        text: {
-          en: 'Exactly 3 Ripe Bananas',
-          hi: 'ठीक ३ पके केले',
-          as: 'ঠিক ৩টা পকা কল',
-          bn: 'ঠিক ৩টি পাকা কলা',
-          mni: 'মচেৎ ৩ চাফাবা চোম্প্রা'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🍌',
-        text: {
-          en: 'Just 1 Single Banana',
-          hi: 'सिर्फ १ अकेला केला',
-          as: 'কেৱল ১টা কল',
-          bn: 'মাত্র ১টি কলা',
-          mni: 'অমাখক চাফাবা চোম্প্রা'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🍌',
-        text: {
-          en: '5 Bananas in a Bunch',
-          hi: '५ केलों का गुच्छा',
-          as: '৫টা কলৰ থোকা',
-          bn: '৫টি কলার ছড়া',
-          mni: 'চোম্প্রা ৫'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '🍎',
-        text: {
-          en: 'Zero bananas (only apples)',
-          hi: 'कोई केला नहीं (सिर्फ सेब)',
-          as: 'কোনো কল নাছিল (কেৱল আপেল)',
-          bn: 'কোনো কলা নেই (শুধু আপেল)',
-          mni: 'চোম্প্রা লৈত্ৰে'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '🧺', text: { en: 'Green Woven Shopping Basket', hi: 'हरी बुनी हुई टोकरी', as: 'সেউজীয়া বজাৰৰ খৰাহী', bn: 'সবুজ বোনা ঝুড়ি', mni: 'অশেংবা পৈলা' }, isCorrect: true },
+      { id: 'opt-2', icon: '🥛', text: { en: 'A pouch of yogurt', hi: 'दही की थैली', as: 'দৈৰ পেকেট', bn: 'দইয়ের প্যাকেট', mni: 'দহিগী পেকেত' }, isCorrect: false },
+      { id: 'opt-3', icon: '👛', text: { en: 'A coin purse from his pocket', hi: 'सिक्कों का बटुआ', as: 'পইচাৰ বেগ', bn: 'পয়সার থলি', mni: 'শেলগী বেগ' }, isCorrect: false },
+      { id: 'opt-4', icon: '🥕', text: { en: 'A bunch of fresh carrots', hi: 'गाजर का गुच्छा', as: 'গাজৰৰ মুঠা', bn: 'গাজরের আঁটি', mni: 'গাজৰগী মুথা' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'Three ripe bananas were placed neatly around the single red apple on the xorai.',
-      hi: 'सराई में एक लाल सेब के साथ ठीक ३ पके केले रखे गए थे।',
-      as: 'শৰাইখনত ৰঙা আপেলটোৰ কাষত ধুনীয়াকৈ ৩টা পকা কল সজাই ৰখা হৈছিল।',
-      bn: 'শরাইয়ের ওপর একটি লাল আপেলের সাথে ঠিক ৩টি পাকা কলা রাখা হয়েছিল।',
-      mni: 'খোংজেম্বদা সেব অমগা লোয়ননা চাফাবা চোম্প্রা ৩ থমখি।'
+      en: 'Upon entering the grocery market, the elder first took a green woven shopping basket from the wooden rack.',
+      hi: 'बाजार में प्रवेश करते ही उन्होंने लकड़ी के स्टैंड से एक हरी टोकरी ली थी।',
+      as: 'দোকানত সোমাই প্ৰথমে কাঠৰ ৰেকৰ পৰা সেউজীয়া খৰাহীটো লৈছিল।',
+      bn: 'দোকানে ঢুকেই তিনি কাঠের তাক থেকে সবুজ ঝুড়িটি তুলে নিয়েছিলেন।',
+      mni: 'কৈথেলদা চঙলক্লগা অহানবদা উগী স্তেন্দতগী অশেংবা পৈলা অদু লৌখি।'
     }
   },
   {
-    id: 'mm-007',
-    difficulty: 6,
-    levelTier: 'medium',
-    durationSeconds: 12,
-    category: 'sequence',
-    cognitiveSkill: 'sequence',
-    questionType: 'sequence-order',
-    sceneType: 'reading_glasses',
-    videoUrl: '/assets/videos/memory-motion/reading-glasses.mp4',
-    posterUrl: '/assets/images/patient-ramesh.jpg',
-    replayAllowed: true,
-    maxReplays: 1,
-    title: {
-      en: 'Morning Newspaper Routine',
-      hi: 'अखबार पढ़ने की सुबह',
-      as: 'বাতৰি কাকত পঢ়াৰ পুৱা',
-      bn: 'সকালের খবরের কাগজ পড়া',
-      mni: 'অয়ূককী পৌচে পাপা'
-    },
-    description: {
-      en: 'Putting on reading spectacles, opening the daily newspaper, and picking up a pencil to mark.',
-      hi: 'चश्मा पहनकर अखबार खोला गया और पेंसिल से निशान लगाया।',
-      as: 'চশমা পিন্ধি বাতৰি কাকত মেলি পেন্সিলেৰে দাগ দিয়া হ’ল।',
-      bn: 'চশমা পরে খবরের কাগজ খুলে পেনসিল দিয়ে দাগ দেওয়া হলো।',
-      mni: 'মিৎচশমা উপতুনা পৌচে পাখি।'
-    },
+    id: 'mm-m-003',
+    roundIndex: 2,
+    difficulty: 3,
+    levelTier: 'easy',
+    scenarioKey: 'GROCERY_MARKET',
+    sceneType: 'GROCERY_MARKET',
     question: {
-      en: 'Which action happened FIRST in the video clip?',
-      hi: 'वीडियो में सबसे पहले क्या काम हुआ?',
-      as: 'ভিডিঅ’টোত আটাইতকৈ প্ৰথমতে কি কাম হ’ল?',
-      bn: 'ভিডিওটিতে সবার প্রথমে কোন কাজটি হয়েছিল?',
-      mni: 'ভিডিও অসিদা অহানবদা করি তৌখিগে?'
+      en: 'Which beverage packet was selected from the refrigerated shelf?',
+      hi: 'फ्रिज वाली शेल्फ से कौन सा पैकेट चुना गया?',
+      as: 'ফ্ৰিজৰ পৰা কিহৰ পেকেট বাছি ল’লে?',
+      bn: 'ফ্রিজের তাক থেকে কোন প্যাকেটটি নেওয়া হয়েছিল?',
+      mni: 'ফ্রিজদগী করিগী পেকেত খল্লগা লৌখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '👓',
-        text: {
-          en: 'Put on reading spectacles from the case',
-          hi: 'केस से निकाल कर पढ़ने का चश्मा पहना',
-          as: 'খাপৰ পৰা চশমাযোৰ পিন্ধিলে',
-          bn: 'খাপ থেকে চশমা বের করে পরলেন',
-          mni: 'কেস অদুদগী মিৎচশমা লৌথোক্তুনা উপখি'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '📰',
-        text: {
-          en: 'Folded the newspaper into half',
-          hi: 'अखबार को आधा मोड़ा',
-          as: 'বাতৰি কাকতখন ভাঁজ কৰিলে',
-          bn: 'খবরের কাগজটি ভাঁজ করলেন',
-          mni: 'পৌচে অদু তংখাইদা থংজিনখি'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '✏️',
-        text: {
-          en: 'Sharpened the pencil with sharpener',
-          hi: 'पेंसिल छीली',
-          as: 'পেন্সিল কটাৰে কাটিলে',
-          bn: 'পেনসিল শার্প করলেন',
-          mni: 'পেন্সিল শেংখি'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '☕',
-        text: {
-          en: 'Spilled tea on the wooden table',
-          hi: 'मेज पर चाय गिराई',
-          as: 'মেজত চাহ পেলালে',
-          bn: 'টেবিলে চা ফেললেন',
-          mni: 'চা পুংখ্রে'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '🥛', text: { en: 'Fresh Blue & White Milk Packet', hi: 'दूध का नीला-सफेद पैकेट', as: 'নীলা-বগা গাখীৰৰ পেকেট', bn: 'নীল-সাদা দুধের প্যাকেট', mni: 'নীলা-অঙৌবা শঙ্গোম পেকেত' }, isCorrect: true },
+      { id: 'opt-2', icon: '🧃', text: { en: 'Orange Fruit Juice Box', hi: 'संतरे के जूस का डिब्बा', as: 'কমলা ৰসৰ কাৰ্টুন', bn: 'কমলার জুসের বাক্স', mni: 'কোমোলা জুস বাস্কা' }, isCorrect: false },
+      { id: 'opt-3', icon: '🥫', text: { en: 'Canned Tomato Soup', hi: 'टमाटर का सूप', as: 'টমেটো চুৰুহাৰ টিন', bn: 'টমেটো স্যুপের কৌটো', mni: 'খামেন আসুপ কৌতো' }, isCorrect: false },
+      { id: 'opt-4', icon: '🧈', text: { en: 'A block of yellow butter', hi: 'मक्खन की टिक्की', as: 'মাখনৰ চপটা', bn: 'মাখনের বার', mni: 'মখন' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'First, the elder took the spectacles out of the case and wore them before reading.',
-      hi: 'सबसे पहले बुजुर्ग ने केस से चश्मा निकाल कर पहना था।',
-      as: 'প্ৰথমতে ককাদেউতাই চশমাৰ খাপৰ পৰা চশমা উলিয়াই পিন্ধি লৈছিল।',
-      bn: 'প্রথমে চশমার কেস থেকে চশমা বের করে পরেছিলেন।',
-      mni: 'অহানবদা কেসতগী মিৎচশমা লৌথোক্তুনা উপখি।'
+      en: 'The elder reached into the dairy cooler and took a fresh blue and white pouch of milk.',
+      hi: 'उन्होंने डेयरी फ्रिज से दूध का एक ताजा पैकेट निकाला था।',
+      as: 'তেখেতে ফ্ৰিজৰ পৰা সতেজ নীলা-বগা গাখীৰৰ পেকেটটো তুলি লৈছিল।',
+      bn: 'তিনি ডেয়ারি ফ্রিজ থেকে নীল-সাদা তাজা দুধের প্যাকেটটি নিয়েছিলেন।',
+      mni: 'ফ্রিজ মনুংদগী শঙ্গোমগী পেকেত অদু লৌথোকখি।'
+    }
+  },
+
+  // ===========================================================================
+  // ROUND 3: 🌳 Garden & Park Walk
+  // ===========================================================================
+  {
+    id: 'mm-g-001',
+    roundIndex: 3,
+    difficulty: 2,
+    levelTier: 'easy',
+    scenarioKey: 'GARDEN_PARK',
+    sceneType: 'GARDEN_PARK',
+    question: {
+      en: 'What COLOR was the blooming flower blossom in the garden?',
+      hi: 'बगीचे में खिले हुए फूल का रंग क्या था?',
+      as: 'বাগানত ফুলা ফুলপাহৰ ৰং কি আছিল?',
+      bn: 'বাগানে ফোটা ফুলটির রঙ কী ছিল?',
+      mni: 'লৈকোলদা শাত্লিবা লৈ অদুগী মচু করম্বা মচুনো?'
+    },
+    options: [
+      { id: 'opt-1', icon: '🌺', text: { en: 'Bright Red', hi: 'चमकीला लाल', as: 'উজ্জ্বল ৰঙা', bn: 'উজ্জ্বল লাল', mni: 'ঙাল্লবা অঙাংবা' }, isCorrect: true },
+      { id: 'opt-2', icon: '💜', text: { en: 'Deep Purple', hi: 'गहरा बैंगनी', as: 'গাঢ় বেঙুনীয়া', bn: 'গাঢ় বেগুনি', mni: 'অচৌবা বেঙ্গনী' }, isCorrect: false },
+      { id: 'opt-3', icon: '🤍', text: { en: 'Pure White', hi: 'सफेद', as: 'বগা', bn: 'সাদা', mni: 'অঙৌবা' }, isCorrect: false },
+      { id: 'opt-4', icon: '🌼', text: { en: 'Golden Yellow', hi: 'सुनहरा पीला', as: 'সোণালী হালধীয়া', bn: 'সোনালী হলুদ', mni: 'সোনার মচু' }, isCorrect: false }
+    ],
+    correctAnswerIndex: 0,
+    explanation: {
+      en: 'A vibrant, bright red blooming rose blossom stood out beside the wooden garden bench in the morning sunlight.',
+      hi: 'बेंच के पास एक चमकीला लाल गुलाब का फूल खिला हुआ था।',
+      as: 'চকীৰ কাষতে পুৱাৰ পোহৰত উজ্জ্বল ৰঙা গোলাপ ফুলপাহ ফুলি আছিল।',
+      bn: 'বেঞ্চের পাশে সকালের আলোয় একটি উজ্জ্বল লাল গোলাপ ফুটেছিল।',
+      mni: 'চৌকিগী নাকলদা ঙাল্লবা অঙাংবা গুলাপ লৈ শাতুনা লৈখি।'
     }
   },
   {
-    id: 'mm-008',
-    difficulty: 7,
-    levelTier: 'hard',
-    durationSeconds: 14,
-    category: 'attention',
-    cognitiveSkill: 'sequence',
-    questionType: 'sequence-order',
-    sceneType: 'pond_birds',
-    videoUrl: '/assets/videos/memory-motion/pond-birds.mp4',
-    posterUrl: '/assets/images/hero-light.jpg',
-    replayAllowed: false,
-    maxReplays: 0,
-    title: {
-      en: 'Lakeside Heron & Kingfisher',
-      hi: 'झील किनारे बगुला और किलकिला पक्षी',
-      as: 'পুখুৰীৰ পাৰৰ বগলী আৰু মাছৰোকা',
-      bn: 'পুকুর পাড়ে বক ও মাছরাঙা',
-      mni: 'পাতকী তোবা অমসুং ঙালেকপা'
-    },
-    description: {
-      en: 'By a calm lotus pond, a white crane lands softly on bamboo poles, followed by a blue kingfisher.',
-      hi: 'शांत तालाब में पहले सफेद बगुला बैठा, फिर नीली किलकिला पक्षी आई।',
-      as: 'পুখুৰীৰ বাঁহৰ খুঁটাত প্ৰথমে বগা বগলী বহিল, তাৰ পিছত মাছৰোকা উৰি আহিল।',
-      bn: 'শান্ত পুকুরের বাঁশের খুঁটিতে প্রথমে সাদা বক বসল, তারপর মাছরাঙা এল।',
-      mni: 'পাতকী ৱাকু অমদা অঙৌবা তোবা হন্না তাখি, মতুংদা ঙালেকপা তাখি।'
-    },
+    id: 'mm-g-002',
+    roundIndex: 3,
+    difficulty: 2,
+    levelTier: 'easy',
+    scenarioKey: 'GARDEN_PARK',
+    sceneType: 'GARDEN_PARK',
     question: {
-      en: 'Which bird arrived at the pond pole FIRST, before the others?',
-      hi: 'दूसरों से पहले, सबसे पहले कौन सा पक्षी बाँस पर आकर बैठा?',
-      as: 'আনবোৰৰ আগত, বাঁহৰ খুঁটাত আটাইতকৈ প্ৰথমতে কোনটো চৰাই বহিল?',
-      bn: 'অন্যদের আগে, বাঁশের খুঁটিতে সবার প্রথমে কোন পাখিটি এসে বসল?',
-      mni: 'অতৈগী মাংঙোইদা, অহানবদা করম্বা উচেক অদু তাখিগে?'
+      en: 'Where did the person sit down to rest during the garden walk?',
+      hi: 'बगीचे में टहलने के दौरान व्यक्ति कहाँ आराम करने बैठे?',
+      as: 'বাগানত ফুৰি থাকোঁতে মানুহগৰাকী ক’ত বহিল?',
+      bn: 'বাগানে ঘোরার সময় ব্যক্তিটি কোথায় বসলেন?',
+      mni: 'লৈকোলদা চৎপদা মীওই অদু কদাইদা ফমখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🦩',
-        text: {
-          en: 'The Graceful White Heron / Crane',
-          hi: 'सफेद शांत बगुला',
-          as: 'শান্ত ধুনীয়া বগা বগলী',
-          bn: 'শান্ত সুন্দর সাদা বক',
-          mni: 'অঙৌবা শান্ত তোবা'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🐦',
-        text: {
-          en: 'The Little Blue Kingfisher',
-          hi: 'नीली छोटी किलकिला पक्षी',
-          as: 'নীলা মাছৰোকা চৰাই',
-          bn: 'নীল মাছরাঙা পাখি',
-          mni: 'নীলা ঙালেকপা'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🦆',
-        text: {
-          en: 'A Brown Wild Teal Duck',
-          hi: 'भूरे रंग की बत्तख',
-          as: 'বাদামী বনৰীয়া হাঁহ',
-          bn: 'বাদামী বুনো হাঁস',
-          mni: 'ঙানু'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '🦅',
-        text: {
-          en: 'A Large Flying Eagle',
-          hi: 'बड़ा उड़ता हुआ चील',
-          as: 'উৰি থকা ডাঙৰ চিলনী',
-          bn: 'উড়ন্ত বড় চিল',
-          mni: 'উমাংগী মুইবি'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '🪑', text: { en: 'On the Wooden Park Bench', hi: 'लकड़ी की पार्क बेंच पर', as: 'কাঠৰ পাৰ্কৰ চকীত', bn: 'কাঠের পার্কের বেঞ্চে', mni: 'উগী চৌকিদা' }, isCorrect: true },
+      { id: 'opt-2', icon: '🌿', text: { en: 'Directly on the wet grass', hi: 'सीधे गीली घास पर', as: 'ঘাঁহনিৰ ওপৰত', bn: 'ঘাসের ওপর', mni: 'ঘাসকী মথক্তা' }, isCorrect: false },
+      { id: 'opt-3', icon: '🧱', text: { en: 'On the stone wall border', hi: 'पत्थर की दीवार पर', as: 'শিলৰ দেৱালত', bn: 'পাথরের পাঁচিলে', mni: 'নূংগী দেৱালদা' }, isCorrect: false },
+      { id: 'opt-4', icon: '⛺', text: { en: 'Inside a garden gazebo', hi: 'छतरी के नीचे', as: 'মণ্ডপৰ ভিতৰত', bn: 'মঞ্চের নিচে', mni: 'মণ্ডপ মনুংদা' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'The tall white heron landed gracefully on the bamboo pole first, followed moments later by the kingfisher.',
-      hi: 'सफेद बगुला सबसे पहले बाँस पर उतरा था, उसके बाद छोटी किलकिला आई थी।',
-      as: 'বগা বগলীটোৱে প্ৰথমে বাঁহৰ খুঁটাত বহিছিল, তাৰ কিছু সময় পিছত মাছৰোকাটো আহিল।',
-      bn: 'সাদা বকটি প্রথমে বাঁশের খুঁটিতে এসে বসেছিল, তারপর মাছরাঙা এল।',
-      mni: 'অঙৌবা তোবা অদু অহানবদা তাখি, মতুংদা ঙালেকপা তাখি।'
+      en: 'The person sat peacefully on a shaded wooden park bench along the stone garden walkway.',
+      hi: 'व्यक्ति रास्ते के पास एक छायादार लकड़ी की बेंच पर बैठे थे।',
+      as: 'তেখেতে বাটৰ কাষৰ কাঠৰ পাৰ্কৰ চকীত শান্তভাৱে বহিছিল।',
+      bn: 'তিনি রাস্তার পাশে ছায়াময় কাঠের বেঞ্চে শান্তভাবে বসেছিলেন।',
+      mni: 'মহাক্না উগী চৌকিদা নুংঙাইনা ফমখি।'
     }
   },
   {
-    id: 'mm-009',
-    difficulty: 8,
-    levelTier: 'hard',
-    durationSeconds: 15,
-    category: 'sequence',
-    cognitiveSkill: 'sequence',
-    questionType: 'sequence-order',
-    sceneType: 'paan_folding',
-    videoUrl: '/assets/videos/memory-motion/paan-folding.mp4',
-    posterUrl: '/assets/images/role-caregiver.jpg',
-    replayAllowed: false,
-    maxReplays: 0,
-    title: {
-      en: 'Traditional Tamul-Paan Offering',
-      hi: 'पारंपरिक ताम्बूल-पान तैयार करना',
-      as: 'তামোল-পান সজোৱা পৰম্পৰা',
-      bn: 'ঐতিহ্যবাহী পান সাজানো',
-      mni: 'তাম্বুল পান শেম্বা'
-    },
-    description: {
-      en: 'Preparing a traditional guest offering: washing the betel leaf, adding chuna, placing sliced areca nut, and folding.',
-      hi: 'मेहमानों के लिए पान का पत्ता धोकर चूना, सुपारी रख कर मोड़ा गया।',
-      as: 'অতিথিক যাচিবলৈ পান পাত ধুই চূণ আৰু তামোল দি সুন্দৰকৈ ভাঁজ কৰা হৈছে।',
-      bn: 'অতিথির জন্য পান ধুয়ে চুন ও সুপারি দিয়ে ভাঁজ করা হলো।',
-      mni: 'পান পাতা শেংদোক্তুনা তাম্বুল পান শেম্লি।'
-    },
+    id: 'mm-g-003',
+    roundIndex: 3,
+    difficulty: 3,
+    levelTier: 'easy',
+    scenarioKey: 'GARDEN_PARK',
+    sceneType: 'GARDEN_PARK',
     question: {
-      en: 'What ingredient was placed onto the leaf AFTER the white lime paste (chuna)?',
-      hi: 'सफेद चूना लगाने के बाद पत्ते पर क्या रखा गया?',
-      as: 'বগা চূণ লগোৱাৰ ঠিক পিছত পান পাতত কি দিয়া হ’ল?',
-      bn: 'সাদা চুন লাগানোর ঠিক পরে পানের ওপর কী দেওয়া হয়েছিল?',
-      mni: 'অঙৌবা চুন হাপ্লবা মতুংদা করি হাপখিগে?'
+      en: 'What COLOR was the water bottle picked up from the bench?',
+      hi: 'बेंच से उठाई गई पानी की बोतल का रंग क्या था?',
+      as: 'চকীৰ পৰা তোলা পানীৰ বটলটোৰ ৰং কি আছিল?',
+      bn: 'বেঞ্চ থেকে তোলা জলের বোতলের রঙ কী ছিল?',
+      mni: 'চৌকিদগী লৌখৎখিবা ঈশিং বোতল অদুগী মচু করি মচুনো?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🌰',
-        text: {
-          en: 'Thinly sliced fresh betel nut (Tamul)',
-          hi: 'बारीक कटी सुपारी (ताम्बूल)',
-          as: 'মিহিকৈ কটা কেঁচা তামোল',
-          bn: 'কুচানো সুপারি (তাম্বুল)',
-          mni: 'অতেংবা কুপ্না শেম্বা কুবা'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🧂',
-        text: {
-          en: 'A pinch of table salt',
-          hi: 'सफेद नमक',
-          as: 'নিমখ',
-          bn: 'এক চিমটে নুন',
-          mni: 'থুম'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🧄',
-        text: {
-          en: 'Crushed garlic cloves',
-          hi: 'लहसुन',
-          as: 'নহৰু',
-          bn: 'রসুন',
-          mni: 'চনম'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '🍬',
-        text: {
-          en: 'Sweet sugar candy crystals',
-          hi: 'मिश्री के दाने',
-          as: 'মিচিৰিৰ দানা',
-          bn: 'মিছরির দানা',
-          mni: 'চিনি'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '🩵', text: { en: 'Sky Blue', hi: 'आसमानी नीला', as: 'আকাশী নীলা', bn: 'আকাশি নীল', mni: 'অসামানী নীলা' }, isCorrect: true },
+      { id: 'opt-2', icon: '🖤', text: { en: 'Charcoal Black', hi: 'काला', as: 'কলা', bn: 'কালো', mni: 'অমুবা' }, isCorrect: false },
+      { id: 'opt-3', icon: '🟠', text: { en: 'Bright Orange', hi: 'नारंगी', as: 'কমলা ৰং', bn: 'কমলা', mni: 'কোমোলা মচু' }, isCorrect: false },
+      { id: 'opt-4', icon: '🟣', text: { en: 'Violet', hi: 'बैंगनी', as: 'বেঙুনীয়া', bn: 'বেগুনি', mni: 'বেঙ্গনী' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'Immediately after spreading a touch of white lime paste, the sliced fresh areca nut was placed on the leaf.',
-      hi: 'सफेद चूना लगाने के तुरंत बाद बारीक कटी सुपारी पत्ते पर रखी गई थी।',
-      as: 'চকা চুন লগোৱাৰ ঠিক পিছতে মিহিকৈ কাটি থোৱা কেঁচা তামোল দিয়া হৈছিল।',
-      bn: 'সাদা চুন দেওয়ার পরপরই কুচানো তাজা সুপারি পানের ওপর রাখা হয়েছিল।',
-      mni: 'চুন হাপ্লবা মতুংদা কুপ্না শেম্বা কুবা হাপখি।'
+      en: 'The person picked up a reusable sky-blue water bottle from the bench corner.',
+      hi: 'उन्होंने बेंच के कोने से एक आसमानी नीले रंग की पानी की बोतल उठाई थी।',
+      as: 'তেখেতে চকীৰ কাষৰ পৰা আকাশী নীলা পানীৰ বটলটো তুলি লৈছিল।',
+      bn: 'তিনি বেঞ্চের কোনা থেকে একটি আকাশি নীল জলের বোতল তুলেছিলেন।',
+      mni: 'মহাক্না চৌকিদগী অসামানী নীলা ঈশিং বোতল অদু লৌখৎখি।'
+    }
+  },
+
+  // ===========================================================================
+  // ROUND 4: 🛏️ Bedroom Evening Routine
+  // ===========================================================================
+  {
+    id: 'mm-b-001',
+    roundIndex: 4,
+    difficulty: 2,
+    levelTier: 'easy',
+    scenarioKey: 'BEDROOM_ROUTINE',
+    sceneType: 'BEDROOM_ROUTINE',
+    question: {
+      en: 'Where were the house keys placed upon entering the bedroom?',
+      hi: 'कमरे में आने के बाद चाबियां कहाँ रखी गईं?',
+      as: 'কোঠালৈ সোমাই চাবিবোৰ ক’ত থোৱা হ’ল?',
+      bn: 'ঘরে ঢোকার পর চাবিগুলো কোথায় রাখা হলো?',
+      mni: 'কা মনুংদা চঙলক্লগা চাবি অদু কদাইদা থমখিগে?'
+    },
+    options: [
+      { id: 'opt-1', icon: '🛏️', text: { en: 'On the Bedside Table', hi: 'बेड के पास वाली मेज पर', as: 'বিছনাৰ কাষৰ মেজত', bn: 'বিছানার পাশের টেবিলে', mni: 'ফমখুম নাকলগী তেবলদা' }, isCorrect: true },
+      { id: 'opt-2', icon: '🚪', text: { en: 'Hung behind the door', hi: 'दरवाजे के पीछे खूंटी पर', as: 'দুৱাৰৰ পিছফালে', bn: 'দরজার পেছনে হুকে', mni: 'থোংগী মখালাদা' }, isCorrect: false },
+      { id: 'opt-3', icon: '🪑', text: { en: 'Under the dressing chair', hi: 'ड्रेसिंग चेयर के नीचे', as: 'চকীৰ তলত', bn: 'চেয়ারের নিচে', mni: 'চৌকি মখাদা' }, isCorrect: false },
+      { id: 'opt-4', icon: '🛋️', text: { en: 'Inside a suitcase', hi: 'सूटकेस के अंदर', as: 'ছুটকেচৰ ভিতৰত', bn: 'স্যুটকেসের ভেতরে', mni: 'সুতকেস মনুংদা' }, isCorrect: false }
+    ],
+    correctAnswerIndex: 0,
+    explanation: {
+      en: 'The person neatly placed the house keys onto the wooden bedside table upon entering the bedroom.',
+      hi: 'कमरे में आकर उन्होंने चाबियों को बिस्तर के पास वाली लकड़ी की मेज पर रखा था।',
+      as: 'কোঠাত সোমাই তেখেতে চাবিৰ থোপাটো বিছনাৰ কাষৰ মেজত সজাই থৈছিল।',
+      bn: 'ঘরে এসে তিনি চাবিগুলো বিছানার পাশের কাঠের টেবিলে রেখেছিলেন।',
+      mni: 'কা মনুংদা চঙলক্লগা চাবি অদু তেবলদা থমখি।'
     }
   },
   {
-    id: 'mm-010',
-    difficulty: 9,
-    levelTier: 'advanced',
-    durationSeconds: 16,
-    category: 'attention',
-    cognitiveSkill: 'working-memory',
-    questionType: 'detail-count',
-    sceneType: 'temple_bell',
-    videoUrl: '/assets/videos/memory-motion/temple-bell.mp4',
-    posterUrl: '/assets/images/auth-clinician.jpg',
-    replayAllowed: false,
-    maxReplays: 0,
-    title: {
-      en: 'Temple Bell Resonance',
-      hi: 'मंदिर की घंटी की गूँज',
-      as: 'মন্দিৰৰ কাঁহৰ ঘণ্টাৰ গুঞ্জন',
-      bn: 'মন্দিরের কাঁসার ঘণ্টার ধ্বনি',
-      mni: 'লাইশংগী ঘণ্টা'
-    },
-    description: {
-      en: 'Ringing the heavy brass temple bell with clear pauses, counting distinct acoustic chimes.',
-      hi: 'मंदिर की पीतल की घंटी को ध्यान से बजाया जा रहा है।',
-      as: 'মন্দিৰৰ কাঁহৰ গধুৰ ঘণ্টা স্পষ্ট বিৰতিত কেইবাবাৰো কোবোৱা হৈছে।',
-      bn: 'মন্দিরের ভারী কাঁসার ঘণ্টা স্পষ্ট বিরতিতে বাজানো হচ্ছে।',
-      mni: 'লাইশংগী পিত্তলগী ঘণ্টা অদু কয়ারক খুংখিগে তাবা।'
-    },
+    id: 'mm-b-002',
+    roundIndex: 4,
+    difficulty: 3,
+    levelTier: 'easy',
+    scenarioKey: 'BEDROOM_ROUTINE',
+    sceneType: 'BEDROOM_ROUTINE',
     question: {
-      en: 'How many distinct times did the person ring the heavy brass bell?',
-      hi: 'व्यक्ति ने पीतल की घंटी को स्पष्ट रूप से कितनी बार बजाया?',
-      as: 'মানুহজনে পিতলৰ ঘণ্টাটি স্পষ্টভাৱে মুঠতে কেইবাৰ কোবালে?',
-      bn: 'ব্যক্তিটি কাঁসার ঘণ্টাটি স্পষ্টভাবে মোট কতবার বাজিয়েছিলেন?',
-      mni: 'মীওই অদুগী ঘণ্টা অদু ময়েং তানা কয়ারক খুংখিগে?'
+      en: 'What item was taken out from the wooden drawer?',
+      hi: 'लकड़ी की दराज से क्या वस्तु निकाली गई?',
+      as: 'কাঠৰ ড্ৰয়াৰৰ পৰা কি বস্তু উলিওৱা হ’ল?',
+      bn: 'কাঠের ড্রয়ার থেকে কোন জিনিসটি বের করা হলো?',
+      mni: 'উগী দ্রৱাৰদগী করি পোৎলম লৌথোকখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🔔',
-        text: {
-          en: 'Exactly 3 Reverberant Strikes',
-          hi: 'ठीक ३ बार गूँजती आवाज़',
-          as: 'ঠিক ৩ বাৰ স্পষ্ট কোব',
-          bn: 'ঠিক ৩ বার ঘণ্টার ধ্বনি',
-          mni: 'মচেৎ ৩ রক ঘণ্টা খুংখি'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🔔',
-        text: {
-          en: 'Only 1 Single Strike',
-          hi: 'सिर्फ १ बार',
-          as: 'কেৱল ১ বাৰ',
-          bn: 'মাত্র ১ বার',
-          mni: 'অমারকখক'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🔔',
-        text: {
-          en: '5 Continuous Strikes',
-          hi: '५ बार लगातार',
-          as: '৫ বাৰ একেৰাহে',
-          bn: '৫ বার একটানা',
-          mni: 'মচেৎ ৫ রক'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '🔔',
-        text: {
-          en: '7 Fast Strikes',
-          hi: '७ बार तेज़ी से',
-          as: '৭ বাৰ খৰকৈ',
-          bn: '৭ বার দ্রুত',
-          mni: 'মচেৎ ৭ রক'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '📖', text: { en: 'Hardcover Reading Book', hi: 'मोटी जिल्द वाली किताब', as: 'পঢ়া কিতাপ', bn: 'পড়ার বই', mni: 'পাবগী লাইরিক' }, isCorrect: true },
+      { id: 'opt-2', icon: '🔦', text: { en: 'A metallic flashlight', hi: 'टॉर्च', as: 'টৰ্চলাইট', bn: 'টর্চলাইট', mni: 'তর্চ' }, isCorrect: false },
+      { id: 'opt-3', icon: '🧣', text: { en: 'A knitted woolen scarf', hi: 'ऊनी मफलर', as: 'মফলাৰ', bn: 'উলের মাফলার', mni: 'মাফলার' }, isCorrect: false },
+      { id: 'opt-4', icon: '📱', text: { en: 'A mobile phone charger', hi: 'फोन चार्जर', as: 'চাৰ্জাৰ', bn: 'মোবাইল চার্জার', mni: 'চার্জর' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'The devotee struck the resonant temple bell exactly 3 times with clear pauses between each chime.',
-      hi: 'भक्त ने मंदिर की घंटी को ठीक ३ बार स्पष्ट ठहराव के साथ बजाया था।',
-      as: 'ভক্তজনে মন্দিৰৰ ঘণ্টাটি ঠিক ৩ বাৰ ধীৰে ধীৰে সুন্দৰকৈ কোবাইছিল।',
-      bn: 'ভক্তটি মন্দিরের ঘণ্টাটি স্পষ্টভাবে ঠিক ৩ বার বাজিয়েছিলেন।',
-      mni: 'ঘণ্টা অদু তোঙান তোঙান্না মচেৎ ৩ রক খুংখি।'
+      en: 'The person opened the wooden nightstand drawer and took out a blue hardcover reading book.',
+      hi: 'दराज खोलकर उन्होंने पढ़ने के लिए एक नीली किताब निकाली थी।',
+      as: 'ড্ৰয়াৰটো খুলি তেখেতে এখন নীলা পঢ়া কিতাপ উলিয়াইছিল।',
+      bn: 'ড্রয়ার খুলে তিনি পড়ার জন্য একটি নীল বই বের করেছিলেন।',
+      mni: 'দ্রৱাৰ হাংদোক্তুনা পাবগী লাইরিক অদু লৌথোকখি।'
     }
   },
   {
-    id: 'mm-011',
-    difficulty: 10,
-    levelTier: 'advanced',
-    durationSeconds: 18,
-    category: 'working-memory',
-    cognitiveSkill: 'working-memory',
-    questionType: 'detail-count',
-    sceneType: 'market_basket',
-    videoUrl: '/assets/videos/memory-motion/market-basket.mp4',
-    posterUrl: '/assets/images/companion-dark.jpg',
-    replayAllowed: false,
-    maxReplays: 0,
-    title: {
-      en: 'Weekly Village Haat Basket',
-      hi: 'साप्ताहिक हाट की टोकरी',
-      as: 'সাপ্তাহিক গাঁৱৰ হাটৰ খৰাহী',
-      bn: 'সাপ্তাহিক গ্রামীণ হাটের ঝুড়ি',
-      mni: 'য়ুমথোং কৈথেলগী পৈলা'
-    },
-    description: {
-      en: 'At the village weekly market, packing purple brinjals, green bottle gourd, and red tomatoes, then counting coins.',
-      hi: 'सब्जी मंडी में बैंगन, लौकी और टमाटर थैले में रखकर सिक्के गिने गए।',
-      as: 'গাঁৱৰ হাটত বেঙেনা, লাউ আৰু বিলাহী খৰাহীত ভৰাই মুদ্ৰা হিচাপ কৰা হ’ল।',
-      bn: 'গ্রামের হাটে বেগুন, লাউ ও টমেটো ঝুড়িতে ভরে কয়েন গোনা হলো।',
-      mni: 'কৈথেলদা খোম্বা বেঙেনা, লৌ অমসুং তোমাতো পৈলাদা হাপতুনা শেল কান্দা।'
-    },
+    id: 'mm-b-003',
+    roundIndex: 4,
+    difficulty: 3,
+    levelTier: 'easy',
+    scenarioKey: 'BEDROOM_ROUTINE',
+    sceneType: 'BEDROOM_ROUTINE',
     question: {
-      en: 'Which vegetable was placed into the woven basket LAST, right before the coins?',
-      hi: 'सिक्के गिनने से ठीक पहले, टोकरी में सबसे आखिर में कौन सी सब्जी रखी गई?',
-      as: 'মুদ্ৰা হিচাপ কৰাৰ ঠিক আগতে, খৰাহীত সকলোতকৈ শেষত কি শাক-পাচলি ভৰোৱা হৈছিল?',
-      bn: 'কয়েন গোনার ঠিক আগে, ঝুড়িতে সবার শেষে কোন সবজিটি রাখা হয়েছিল?',
-      mni: 'শেল কান্দ্রিঙৈ মমাংদা, পৈলাদা খ্বাইদগী অরোইবদা হাপখিবা মনা-মশিং করম্বনো?'
+      en: 'What was the LAST action performed before ending the bedroom routine?',
+      hi: 'शाम की दिनचर्या के अंत में सबसे आखिरी काम क्या किया गया?',
+      as: 'শোৱাৰ আগত আটাইতকৈ শেষত কি কাম কৰা হ’ল?',
+      bn: 'শোওয়ার আগে সবার শেষে কোন কাজটি করা হয়েছিল?',
+      mni: 'অরোইবদা করি থবক তৌখিগে?'
     },
     options: [
-      {
-        id: 'opt-1',
-        icon: '🍅',
-        text: {
-          en: 'Two Bright Red Tomatoes',
-          hi: 'दो लाल पके टमाटर',
-          as: 'দুটা ৰঙা পকা বিলাহী',
-          bn: 'দুটি লাল পাকা টমেটো',
-          mni: 'অঙাংবা তোমাতো অনী'
-        },
-        isCorrect: true
-      },
-      {
-        id: 'opt-2',
-        icon: '🍆',
-        text: {
-          en: 'A Long Purple Brinjal / Eggplant',
-          hi: 'एक लंबा बैंगनी बैंगन',
-          as: 'এটা দীঘল বেঙুনীয়া বেঙেনা',
-          bn: 'একটি লম্বা বেগুন',
-          mni: 'অশাংবা বেঙেনা অমখক'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-3',
-        icon: '🥒',
-        text: {
-          en: 'A Pale Green Bottle Gourd (Lau)',
-          hi: 'एक हरी लौकी',
-          as: 'এটা জাতি লাউ',
-          bn: 'একটি সবুজ লাউ',
-          mni: 'অশেংবা লৌ অমখক'
-        },
-        isCorrect: false
-      },
-      {
-        id: 'opt-4',
-        icon: '🥔',
-        text: {
-          en: 'A Sack of Fresh Potatoes',
-          hi: 'आलू की पोटली',
-          as: 'আলুৰ টোপোলা',
-          bn: 'আলুর পোটলা',
-          mni: 'আলুগী পোট'
-        },
-        isCorrect: false
-      }
+      { id: 'opt-1', icon: '💡', text: { en: 'Turned off the bedside lamp', hi: 'बेडसाइड लैंप बंद किया', as: 'বিছনাৰ কাষৰ চাকি নুমুৱালে', bn: 'বেডসাইড ল্যাম্প বন্ধ করলেন', mni: 'লম্প মুত্থৎখি' }, isCorrect: true },
+      { id: 'opt-2', icon: '🪟', text: { en: 'Closed the large balcony door', hi: 'बालकनी का दरवाजा बंद किया', as: 'বাৰাণ্ডাৰ দুৱাৰ বন্ধ কৰিলে', bn: 'ব্যালকনির দরজা বন্ধ করলেন', mni: 'থোং থিংখি' }, isCorrect: false },
+      { id: 'opt-3', icon: '⏰', text: { en: 'Set the mechanical alarm clock', hi: 'अलार्म सेट किया', as: 'এলাৰ্ম লগালে', bn: 'অ্যালার্ম সেট করলেন', mni: 'এলম হাপখি' }, isCorrect: false },
+      { id: 'opt-4', icon: '🚪', text: { en: 'Locked the main bedroom door', hi: 'मुख्य दरवाजा बंद किया', as: 'মূল দুৱাৰ বন্ধ কৰিলে', bn: 'ঘরের প্রধান দরজা লক করলেন', mni: 'মপূংওইবা থোং থিংখি' }, isCorrect: false }
     ],
     correctAnswerIndex: 0,
     explanation: {
-      en: 'The brinjal and gourd went in first; the two red tomatoes were placed carefully on top last before handling coins.',
-      hi: 'बैंगन और लौकी पहले रखे गए थे; सिक्के निकालने से पहले सबसे अंत में दो टमाटर रखे गए।',
-      as: 'বেঙেনা আৰু লাউ প্ৰথমে ভৰোৱা হৈছিল; মুদ্ৰা ওলোৱাৰ আগে আগে শেষত দুটা ৰঙা বিলাহী সাৱধানে ওপৰত থোৱা হৈছিল।',
-      bn: 'বেগুন এবং লাউ প্রথমে রাখা হয়েছিল; কয়েন গোনার ঠিক আগে সবার শেষে দুটি লাল টমেটো উপরে রাখা হয়েছিল।',
-      mni: 'বেঙেনা অমসুং লৌ অহানবদা হাপখি, অরোইবদা তোমাতো অনী মথক্তা হাপখি।'
+      en: 'At the end of the evening scene, the person reached over and gently turned off the glowing bedside lamp.',
+      hi: 'दृश्य के अंत में उन्होंने सोने से पहले जलते हुए लैंप को बंद कर दिया था।',
+      as: 'দৃশ্যৰ শেষত তেখেতে হাত মেলি বিছনাৰ কাষৰ চাকিটো নুমুৱাই দিছিল।',
+      bn: 'দৃশ্যের শেষে তিনি শোওয়ার আগে জ্বলন্ত ল্যাম্পটি বন্ধ করে দিয়েছিলেন।',
+      mni: 'অরোইবদা মহাক্না লম্প অদু মুত্থৎখি।'
     }
   }
 ];
-
-export function getChallengeById(id) {
-  return MEMORY_MOTION_CHALLENGES.find(c => c.id === id);
-}
-
-export function getChallengesForLevel(level) {
-  const target = Math.max(1, Math.min(10, Math.round(level)));
-  return MEMORY_MOTION_CHALLENGES.filter(c => Math.abs(c.difficulty - target) <= 1.5);
-}
-
-export const memoryMotionChallenges = MEMORY_MOTION_CHALLENGES;
-
-export default MEMORY_MOTION_CHALLENGES;
-

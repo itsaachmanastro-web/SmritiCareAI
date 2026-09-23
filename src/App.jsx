@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { ShieldAlert } from 'lucide-react';
 import Header from './components/common/Header';
 import Sidebar from './components/common/Sidebar';
 import PatientNav from './components/patient/PatientNav';
@@ -12,11 +13,15 @@ import NotificationToast from './components/notifications/NotificationToast';
 import NotificationPermissionModal from './components/notifications/NotificationPermissionModal';
 import CinematicAuthBackground from './components/auth/CinematicAuthBackground';
 
+import FeatureGate from './components/common/FeatureGate';
+import { FEATURE_KEYS } from './services/subscriptionService';
+
 // Pages
 import LandingPage from './pages/LandingPage';
 import RoleSelectPage from './pages/RoleSelectPage';
 import LoginPage from './pages/LoginPage';
 import PatientHome from './pages/patient/PatientHome';
+import PatientSafetyView from './pages/patient/PatientSafetyView';
 import PatientGamesList from './pages/patient/PatientGamesList';
 import PatientReminders from './pages/patient/PatientReminders';
 import PatientProgress from './pages/patient/PatientProgress';
@@ -37,6 +42,101 @@ import AuthDebugPanel from './components/common/AuthDebugPanel';
 import { useAuth } from './context/AuthContext';
 import { useAssistant } from './context/AssistantContext';
 
+/**
+ * AccessDenied Component
+ * Dignified, informative barrier when an authenticated user attempts to access an unauthorized role dashboard.
+ */
+function AccessDenied({ requiredRole, userRole, currentUser }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const roleLabels = {
+    patient: 'Patient / Senior',
+    caregiver: 'Family Caregiver',
+    healthcare: 'Healthcare Professional',
+    clinician: 'Healthcare Professional'
+  };
+
+  const dashboardRoutes = {
+    patient: '/patient/home',
+    caregiver: '/caregiver/dashboard',
+    healthcare: '/clinician/dashboard',
+    clinician: '/clinician/dashboard'
+  };
+
+  const reqName = roleLabels[requiredRole] || requiredRole;
+  const currName = roleLabels[userRole] || userRole || 'User';
+  const myDashboard = dashboardRoutes[userRole] || '/';
+
+  return (
+    <div className="min-h-[80vh] flex items-center justify-center p-6 bg-[#070B0E] text-slate-100">
+      <div className="max-w-md w-full p-8 rounded-2xl bg-[#0E151D] border border-rose-800/40 shadow-2xl text-center space-y-5">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-rose-950/60 border border-rose-800/60 flex items-center justify-center text-rose-400">
+          <ShieldAlert className="w-7 h-7" />
+        </div>
+
+        <div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-rose-400">
+            Access Restricted
+          </span>
+          <h2 className="font-serif text-2xl text-white mt-1">
+            {reqName} Portal
+          </h2>
+          <p className="text-xs text-slate-400 mt-2 leading-relaxed">
+            You are signed in as <strong className="text-white">{currentUser?.name || currName}</strong> (<span className="text-emerald-400">{currName}</span>). This workspace requires <strong className="text-amber-300">{reqName}</strong> credentials.
+          </p>
+        </div>
+
+        <div className="pt-2 space-y-2.5">
+          <button
+            type="button"
+            onClick={() => navigate(myDashboard)}
+            className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold text-xs shadow-md transition-all cursor-pointer"
+          >
+            Go to My {currName} Dashboard
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate(`/login?role=${requiredRole}`)}
+            className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-medium text-xs border border-white/10 transition-all cursor-pointer"
+          >
+            Sign in as {reqName}
+          </button>
+
+          <button
+            type="button"
+            onClick={async () => {
+              await logout();
+              navigate('/');
+            }}
+            className="w-full py-1 text-[11px] text-slate-400 hover:text-rose-400 transition-colors cursor-pointer"
+          >
+            Sign Out
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RequirePatient({ children, currentUser, role, isLoading }) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#FAF8F5] dark:bg-[#070D0E] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+  if (!currentUser) {
+    return <Navigate to="/login?role=patient" replace />;
+  }
+  if (role !== 'patient') {
+    return <AccessDenied requiredRole="patient" userRole={role} currentUser={currentUser} />;
+  }
+  return children;
+}
+
 function RequireCaregiver({ children, currentUser, role, isLoading }) {
   if (isLoading) {
     return (
@@ -48,11 +148,8 @@ function RequireCaregiver({ children, currentUser, role, isLoading }) {
   if (!currentUser) {
     return <Navigate to="/login?role=caregiver" replace />;
   }
-  if (role === 'healthcare') {
-    return <Navigate to="/clinician/dashboard" replace />;
-  }
   if (role !== 'caregiver') {
-    return <Navigate to="/patient/home" replace />;
+    return <AccessDenied requiredRole="caregiver" userRole={role} currentUser={currentUser} />;
   }
   return children;
 }
@@ -68,11 +165,8 @@ function RequireClinician({ children, currentUser, role, isLoading }) {
   if (!currentUser) {
     return <Navigate to="/login?role=healthcare" replace />;
   }
-  if (role === 'caregiver') {
-    return <Navigate to="/caregiver/dashboard" replace />;
-  }
-  if (role !== 'healthcare') {
-    return <Navigate to="/patient/home" replace />;
+  if (role !== 'healthcare' && role !== 'clinician') {
+    return <AccessDenied requiredRole="healthcare" userRole={role} currentUser={currentUser} />;
   }
   return children;
 }
@@ -100,7 +194,7 @@ export default function App() {
   // Check if current route is patient experience
   const isPatientRoute = location.pathname.startsWith('/patient') && location.pathname !== '/patient/community';
   const isCaregiverRoute = location.pathname.startsWith('/caregiver');
-  const isClinicianRoute = location.pathname.startsWith('/clinician');
+  const isClinicianRoute = location.pathname.startsWith('/clinician') || location.pathname.startsWith('/healthcare-worker');
   const isCommunityRoute = location.pathname === '/community' || location.pathname === '/patient/community';
   const isGameActive = location.pathname.startsWith('/patient/games/') && location.pathname !== '/patient/games';
   const isDedicatedAuthView = location.pathname === '/role-select' || location.pathname === '/login';
@@ -123,93 +217,147 @@ export default function App() {
 
           {/* Main Content View */}
           <main className="flex-1 w-full">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<LandingPage defaultSection="about" />} />
-          <Route path="/contact" element={<LandingPage defaultSection="contact" />} />
-          <Route path="/role-select" element={<RoleSelectPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/about" element={<LandingPage defaultSection="about" />} />
+              <Route path="/contact" element={<LandingPage defaultSection="contact" />} />
+              <Route path="/role-select" element={<RoleSelectPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* User Profile & Account Settings (Require Auth) */}
-          <Route
-            path="/profile"
-            element={
-              <RequireAuth currentUser={currentUser} isLoading={isLoading}>
-                <ProfilePage />
-              </RequireAuth>
-            }
-          />
+              {/* Quick Redirects */}
+              <Route path="/patient" element={<Navigate to="/patient/home" replace />} />
+              <Route path="/caregiver" element={<Navigate to="/caregiver/dashboard" replace />} />
+              <Route path="/clinician" element={<Navigate to="/clinician/dashboard" replace />} />
+              <Route path="/healthcare-worker" element={<Navigate to="/clinician/dashboard" replace />} />
+              <Route path="/healthcare-worker/*" element={<Navigate to="/clinician/dashboard" replace />} />
 
-          {/* Patient Routes */}
-          <Route path="/patient/home" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientHome /></RequireAuth>} />
-          <Route path="/patient/games" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientGamesList /></RequireAuth>} />
-          <Route path="/patient/games/bihu" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><BihuMemoryGame /></RequireAuth>} />
-          <Route path="/patient/games/mekhela" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><MekhelaPatternGame /></RequireAuth>} />
-          <Route path="/patient/games/teagarden" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><TeaGardenRoutineGame /></RequireAuth>} />
-          <Route path="/patient/games/soundshills" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><SoundsOfHillsGame /></RequireAuth>} />
-          <Route path="/patient/games/memorymotion" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><MemoryMotionGame /></RequireAuth>} />
-          <Route path="/patient/reminders" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientReminders /></RequireAuth>} />
-          <Route path="/patient/progress" element={<RequireAuth currentUser={currentUser} isLoading={isLoading}><PatientProgress /></RequireAuth>} />
+              {/* User Profile & Account Settings (Require Auth) */}
+              <Route
+                path="/profile"
+                element={
+                  <RequireAuth currentUser={currentUser} isLoading={isLoading}>
+                    <ProfilePage />
+                  </RequireAuth>
+                }
+              />
 
-          {/* Dedicated AI Assistant Hub */}
-          <Route path="/assistant" element={<AiErrorBoundary><AssistantPage /></AiErrorBoundary>} />
+              {/* Patient Routes (Guarded for Patient Role Only) */}
+              <Route path="/patient/home" element={<RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}><PatientHome /></RequirePatient>} />
+              <Route path="/patient/safety" element={<RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}><PatientSafetyView /></RequirePatient>} />
+              <Route path="/patient/games" element={<RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}><PatientGamesList /></RequirePatient>} />
+              <Route
+                path="/patient/games/bihu"
+                element={
+                  <RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}>
+                    <FeatureGate feature={FEATURE_KEYS.ALL_CULTURAL_GAMES} backPath="/patient/games">
+                      <BihuMemoryGame />
+                    </FeatureGate>
+                  </RequirePatient>
+                }
+              />
+              <Route
+                path="/patient/games/mekhela"
+                element={
+                  <RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}>
+                    <FeatureGate feature={FEATURE_KEYS.ALL_CULTURAL_GAMES} backPath="/patient/games">
+                      <MekhelaPatternGame />
+                    </FeatureGate>
+                  </RequirePatient>
+                }
+              />
+              <Route
+                path="/patient/games/teagarden"
+                element={
+                  <RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}>
+                    <FeatureGate feature={FEATURE_KEYS.ALL_CULTURAL_GAMES} backPath="/patient/games">
+                      <TeaGardenRoutineGame />
+                    </FeatureGate>
+                  </RequirePatient>
+                }
+              />
+              <Route
+                path="/patient/games/soundshills"
+                element={
+                  <RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}>
+                    <FeatureGate feature={FEATURE_KEYS.ALL_CULTURAL_GAMES} backPath="/patient/games">
+                      <SoundsOfHillsGame />
+                    </FeatureGate>
+                  </RequirePatient>
+                }
+              />
+              <Route path="/patient/games/memorymotion" element={<RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}><MemoryMotionGame /></RequirePatient>} />
+              <Route path="/patient/games/memory-motion" element={<RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}><MemoryMotionGame /></RequirePatient>} />
+              <Route path="/patient/reminders" element={<RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}><PatientReminders /></RequirePatient>} />
+              <Route path="/patient/progress" element={<RequirePatient currentUser={currentUser} role={role} isLoading={isLoading}><PatientProgress /></RequirePatient>} />
 
-          {/* Global Dementia Community Routes */}
-          <Route path="/community" element={<CommunityPage />} />
-          <Route path="/patient/community" element={<CommunityPage />} />
+              {/* Dedicated AI Assistant Hub */}
+              <Route
+                path="/assistant"
+                element={
+                  <AiErrorBoundary>
+                    <FeatureGate feature={FEATURE_KEYS.VOICE_AI} backPath="/">
+                      <AssistantPage />
+                    </FeatureGate>
+                  </AiErrorBoundary>
+                }
+              />
 
-          {/* Caregiver Dashboard (Guarded for Caregiver) */}
-          <Route
-            path="/caregiver/dashboard"
-            element={
-              <RequireCaregiver currentUser={currentUser} role={role} isLoading={isLoading}>
-                 <CaregiverDashboard />
-              </RequireCaregiver>
-            }
-          />
+              {/* Global Dementia Community Routes */}
+              <Route path="/community" element={<CommunityPage />} />
+              <Route path="/patient/community" element={<CommunityPage />} />
 
-          {/* Healthcare Clinician Dashboard (Guarded for Healthcare Clinician) */}
-          <Route
-            path="/clinician/dashboard"
-            element={
-              <RequireClinician currentUser={currentUser} role={role} isLoading={isLoading}>
-                <ClinicianDashboard />
-              </RequireClinician>
-            }
-          />
+              {/* Caregiver Dashboard (Guarded for Caregiver Role Only) */}
+              <Route
+                path="/caregiver/dashboard"
+                element={
+                  <RequireCaregiver currentUser={currentUser} role={role} isLoading={isLoading}>
+                    <CaregiverDashboard />
+                  </RequireCaregiver>
+                }
+              />
 
-          {/* Smriti Economy & Rewards Hub */}
-          <Route
-            path="/economy"
-            element={
-              <RequireAuth currentUser={currentUser} isLoading={isLoading}>
-                <EconomyHubPage />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/economy/:tab"
-            element={
-              <RequireAuth currentUser={currentUser} isLoading={isLoading}>
-                <EconomyHubPage />
-              </RequireAuth>
-            }
-          />
+              {/* Healthcare Clinician Dashboard (Guarded for Healthcare Role Only) */}
+              <Route
+                path="/clinician/dashboard"
+                element={
+                  <RequireClinician currentUser={currentUser} role={role} isLoading={isLoading}>
+                    <ClinicianDashboard />
+                  </RequireClinician>
+                }
+              />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-    </div>
-  </div>
+              {/* Smriti Economy & Rewards Hub */}
+              <Route
+                path="/economy"
+                element={
+                  <RequireAuth currentUser={currentUser} isLoading={isLoading}>
+                    <EconomyHubPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/economy/:tab"
+                element={
+                  <RequireAuth currentUser={currentUser} isLoading={isLoading}>
+                    <EconomyHubPage />
+                  </RequireAuth>
+                }
+              />
 
-  {/* Elder-Friendly Bottom Navigation (Visible in Patient Mode on mobile, hidden during active game screen) */}
-  {isPatientRoute && !isGameActive && (
-    <div className="lg:hidden">
-      <PatientNav onOpenEmergency={() => setIsEmergencyOpen(true)} />
-    </div>
-  )}
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+        </div>
+      </div>
+
+      {/* Elder-Friendly Bottom Navigation (Visible in Patient Mode on mobile, hidden during active game screen) */}
+      {isPatientRoute && !isGameActive && (
+        <div className="lg:hidden">
+          <PatientNav onOpenEmergency={() => setIsEmergencyOpen(true)} />
+        </div>
+      )}
 
       {/* Universal Floating "Ask Smriti" Voice Trigger */}
       {!isPublicPage && !isAssistantRoute && (

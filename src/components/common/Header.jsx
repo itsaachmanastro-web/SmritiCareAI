@@ -340,7 +340,7 @@ export default function Header({ onOpenEmergency = null }) {
             )}
           </div>
 
-          {/* User Profile & Menu / Sign In */}
+          {/* User Profile & Menu / Sign In / Get Started */}
           {currentUser ? (
             <div className="flex items-center pl-1">
               <UserMenu variant="header" />
@@ -352,13 +352,21 @@ export default function Header({ onOpenEmergency = null }) {
               </div>
             </div>
           ) : (
-            <Link
-              to="/login"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#143D30] hover:bg-[#0E2D23] dark:bg-[#2DD4BF] dark:hover:bg-[#20B8A5] text-white dark:text-[#06110F] text-xs font-bold shadow-sm transition-all cursor-pointer"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span>{t('navigation.signIn')}</span>
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold text-[#142823] dark:text-[#E2EAE5] hover:bg-white/80 dark:hover:bg-[#0E221E] border border-transparent hover:border-[#DFEAE2] dark:hover:border-[#183830] transition-all cursor-pointer"
+              >
+                <LogIn className="w-3.5 h-3.5 text-[#5C756D] dark:text-[#7E9C94]" />
+                <span>{t('navigation.signIn') || 'Sign In'}</span>
+              </Link>
+              <Link
+                to="/role-select"
+                className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 rounded-full bg-[#143D30] hover:bg-[#0E2D23] dark:bg-[#2DD4BF] dark:hover:bg-[#20B8A5] text-white dark:text-[#06110F] text-xs font-bold shadow-sm transition-all cursor-pointer"
+              >
+                <span>{t('getStarted') || 'Get Started'}</span>
+              </Link>
+            </div>
           )}
         </div>
       </div>

@@ -6,6 +6,7 @@ import { saveConversationMessage } from '../db/syncService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { useEntitlements } from './useEntitlements';
 import { aiService } from '../services/ai/aiService';
 import { speechService } from '../services/speech/speechService';
 import { getLanguage } from '../services/translation/languageRegistry';
@@ -22,6 +23,7 @@ export function useVoiceAssistant({
   const { currentUser } = useAuth();
   const { language, setLanguage } = useLanguage();
   const { toggleTheme } = useTheme();
+  const { canAccessVoiceAi, planCode, planName } = useEntitlements();
   const navigate = useNavigate();
 
   const userId = currentUser?.id || null;
@@ -105,6 +107,14 @@ export function useVoiceAssistant({
     isProcessingRef.current = true;
     setErrorMessage(null);
 
+    // Plan-based Entitlement Guard: Voice AI is exclusive to Premium tier
+    if (!canAccessVoiceAi) {
+      setErrorMessage('Voice AI is exclusive to SmritiCare Premium (₹899/mo). Please upgrade your plan to chat with Smriti.');
+      setState(ASSISTANT_STATES.IDLE);
+      isProcessingRef.current = false;
+      return;
+    }
+
     // Cancel any in-flight query
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -180,6 +190,7 @@ export function useVoiceAssistant({
         userId,
         userName: currentUser?.name || 'Elder',
         userRole: currentUser?.role || 'patient',
+        planCode,
         currentLanguage: language,
         currentPage: window.location.pathname,
         currentGameId,
@@ -188,6 +199,12 @@ export function useVoiceAssistant({
         currentScore,
         conversationHistory,
         signal: controller.signal,
+        userContext: {
+          id: userId,
+          name: currentUser?.name || 'Elder',
+          role: currentUser?.role || 'patient',
+          planCode
+        },
         gameContext: {
           currentGame: currentGameName || currentGameId,
           score: currentScore,
@@ -262,6 +279,12 @@ export function useVoiceAssistant({
     setErrorMessage(null);
     setLiveTranscript('');
 
+    if (!canAccessVoiceAi) {
+      setErrorMessage('Voice AI is exclusive to SmritiCare Premium (₹899/mo). Please upgrade your plan to speak with Smriti.');
+      setState(ASSISTANT_STATES.IDLE);
+      return;
+    }
+
     // Cancel in-flight request if user taps to talk again
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -301,7 +324,7 @@ export function useVoiceAssistant({
         }
       }
     });
-  }, [language, processQuery]);
+  }, [language, processQuery, canAccessVoiceAi]);
 
   // Stop listening
   const stopVoiceInput = useCallback(() => {
@@ -348,6 +371,9 @@ export function useVoiceAssistant({
     isSpeaking,
     language,
     currentLangConfig: getLanguage(language),
+    canAccessVoiceAi,
+    planCode,
+    planName,
     startVoiceInput,
     stopVoiceInput,
     processQuery,

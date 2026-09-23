@@ -3,6 +3,7 @@ import confetti from 'canvas-confetti';
 import { motion } from 'framer-motion';
 import { Star, Award, RotateCcw, ArrowRight, Sparkles } from 'lucide-react';
 import ElderButton from './ElderButton';
+import AiAdaptationCard from './AiAdaptationCard';
 import { playVictorySound } from '../../audio/synthAudio';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAssistant } from '../../context/AssistantContext';
@@ -16,7 +17,9 @@ export default function ConfettiCelebration({
   mistakes = 0,
   onPlayAgain,
   onNext,
-  gameName = ""
+  gameName = "",
+  adaptationData = null,
+  difficultyLevel = 'medium'
 }) {
   const { t } = useLanguage();
   const { openAssistant } = useAssistant();
@@ -107,7 +110,7 @@ export default function ConfettiCelebration({
       </div>
 
       {/* Stats Summary Cards */}
-      <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-[#1E293B] p-4 rounded-2xl border border-slate-200 dark:border-[#243352] mb-8">
+      <div className="grid grid-cols-3 gap-3 bg-slate-50 dark:bg-[#1E293B] p-4 rounded-2xl border border-slate-200 dark:border-[#243352] mb-5">
         <div>
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">{t('score')}</span>
           <p className="text-2xl md:text-3xl font-black text-smriti-teal-700 dark:text-smriti-teal-300">{score}%</p>
@@ -121,6 +124,15 @@ export default function ConfettiCelebration({
           <p className="text-2xl md:text-3xl font-black text-amber-600 dark:text-amber-400">{mistakes}</p>
         </div>
       </div>
+
+      {/* AI Adaptation Status Card */}
+      <AiAdaptationCard
+        adaptationData={adaptationData}
+        score={score}
+        mistakes={mistakes}
+        difficultyLevel={difficultyLevel}
+        className="mb-5"
+      />
 
       {/* Offline Storage confirmation pill */}
       <div className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-[#1E293B] border border-emerald-200 dark:border-emerald-800/80 rounded-full text-emerald-800 dark:text-emerald-300 text-sm font-semibold mb-6">

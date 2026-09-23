@@ -81,29 +81,66 @@ export async function saveReminder(reminder) {
   const isOffline = !navigator.onLine;
   const now = new Date().toISOString();
 
-  const targetUserId = reminder.targetUserId || reminder.patientId || reminder.userId || (typeof localStorage !== 'undefined' ? Number(localStorage.getItem('smriti_user_id')) : null);
-  if (!targetUserId) {
-    throw new Error('Target user ID is required to save a reminder.');
+  const targetUserId = Number(reminder.targetUserId || reminder.patientId || reminder.userId || (typeof localStorage !== 'undefined' ? localStorage.getItem('smriti_user_id') : 1));
+  if (!targetUserId || isNaN(targetUserId)) {
+    throw new Error('Target patient ID is required to save a reminder.');
   }
 
   const user = await db.users.get(Number(targetUserId));
   const isDemo = Boolean(reminder.isDemo ?? user?.isDemo);
 
+  const category = (reminder.category || reminder.type || 'medicine').toLowerCase();
+  const frequency = (reminder.frequency || reminder.recurring || 'daily').toLowerCase();
+  const priority = (reminder.priority || 'normal').toLowerCase();
+  const title = (reminder.title || reminder.label || 'Reminder').trim();
+  const time = (reminder.time || reminder.scheduledAt || reminder.dueAt || '09:00 AM').trim();
+
+  // 1. Try server write
+  try {
+    fetch('/api/reminders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...reminder,
+        targetUserId,
+        userId: targetUserId,
+        patientId: targetUserId,
+        title,
+        label: title,
+        time,
+        scheduledAt: time,
+        dueAt: time,
+        category,
+        type: category,
+        frequency,
+        recurring: frequency,
+        priority,
+        isDemo
+      })
+    }).catch(() => {});
+  } catch {}
+
+  // 2. Write to Dexie IndexedDB
   return await db.transaction('rw', [db.reminders, db.syncQueue], async () => {
     let id;
     if (reminder.id) {
-      id = reminder.id;
+      id = Number(reminder.id);
       const updatedFields = {
         ...reminder,
         targetUserId,
-        userId: reminder.userId || targetUserId,
-        patientId: reminder.patientId || targetUserId,
+        userId: targetUserId,
+        patientId: targetUserId,
         isDemo,
-        title: reminder.title || reminder.label,
-        label: reminder.label || reminder.title,
-        dueAt: reminder.dueAt || reminder.time,
-        time: reminder.time || reminder.dueAt,
-        scheduledAt: reminder.scheduledAt || reminder.dueAt || reminder.time,
+        title,
+        label: title,
+        dueAt: time,
+        time,
+        scheduledAt: time,
+        type: category,
+        category,
+        recurring: frequency,
+        frequency,
+        priority,
         status: reminder.status || ((reminder.done ?? reminder.completed) ? 'completed' : 'pending'),
         completed: Boolean(reminder.done ?? reminder.completed),
         done: Boolean(reminder.done ?? reminder.completed),
@@ -114,18 +151,21 @@ export async function saveReminder(reminder) {
     } else {
       const newReminder = {
         targetUserId,
-        userId: reminder.userId || targetUserId,
-        patientId: reminder.patientId || targetUserId,
+        userId: targetUserId,
+        patientId: targetUserId,
         isDemo,
         createdBy: reminder.createdBy || 'Caregiver',
-        scheduledAt: reminder.scheduledAt || reminder.dueAt || reminder.time || '09:00 AM',
+        scheduledAt: time,
         status: reminder.status || (reminder.done ? 'completed' : 'pending'),
-        title: reminder.title || reminder.label || 'Reminder',
-        label: reminder.label || reminder.title || 'Reminder',
-        time: reminder.time || reminder.dueAt || '09:00 AM',
-        dueAt: reminder.dueAt || reminder.time || '09:00 AM',
-        type: reminder.type || 'routine',
-        recurring: reminder.recurring || 'daily',
+        title,
+        label: title,
+        time,
+        dueAt: time,
+        type: category,
+        category,
+        recurring: frequency,
+        frequency,
+        priority,
         done: Boolean(reminder.done),
         completed: Boolean(reminder.done),
         missedCount: Number(reminder.missedCount || 0),
@@ -145,13 +185,22 @@ export async function toggleReminder(id, isDone) {
   const now = new Date().toISOString();
   const reminder = await db.reminders.get(id);
 
+  try {
+    fetch('/api/reminders', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, done: isDone, completed: isDone })
+    }).catch(() => {});
+  } catch {}
+
   await db.transaction('rw', [db.reminders, db.syncQueue], async () => {
     await db.reminders.update(id, {
       done: isDone,
       completed: isDone,
+      status: isDone ? 'completed' : 'pending',
       updatedAt: now
     });
-    await queueSyncItem('reminders', id, 'UPDATE', { id, done: isDone, completed: isDone, updatedAt: now });
+    await queueSyncItem('reminders', id, 'UPDATE', { id, done: isDone, completed: isDone, status: isDone ? 'completed' : 'pending', updatedAt: now });
   });
 
   // Award routine task completion credits and record activity if marked done
@@ -195,10 +244,23 @@ export async function toggleReminder(id, isDone) {
 
 // Delete reminder
 export async function deleteReminder(id) {
-  return await db.transaction('rw', [db.reminders, db.syncQueue], async () => {
-    await db.reminders.delete(id);
-    await queueSyncItem('reminders', id, 'DELETE', { id });
-  });
+  const idNum = Number(id);
+
+  try {
+    fetch(`/api/reminders?id=${idNum}`, {
+      method: 'DELETE'
+    }).catch(() => {});
+  } catch {}
+
+  try {
+    return await db.transaction('rw', [db.reminders, db.syncQueue], async () => {
+      await db.reminders.delete(idNum);
+      await queueSyncItem('reminders', idNum, 'DELETE', { id: idNum });
+    });
+  } catch (err) {
+    console.error('Failed to delete reminder:', err);
+    throw err;
+  }
 }
 
 // Create or update a patient profile

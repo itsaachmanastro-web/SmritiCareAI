@@ -35,24 +35,20 @@ function getNestedValue(dict, keyPath) {
 
   // 2. Dot notation traversal (e.g. 'games.bihu.title')
   const keys = keyPath.split('.');
-  let current = dict;
-  for (const k of keys) {
-    if (current && typeof current === 'object' && k in current) {
-      current = current[k];
-    } else {
-      current = undefined;
-      break;
+  if (keys.length > 1) {
+    let current = dict;
+    for (const k of keys) {
+      if (current && typeof current === 'object' && k in current) {
+        current = current[k];
+      } else {
+        current = undefined;
+        break;
+      }
     }
-  }
 
-  if (typeof current === 'string') {
-    return current;
-  }
-
-  // 3. Fallback: Check if key matches last part of dot notation or legacy name
-  const lastKey = keys[keys.length - 1];
-  if (typeof dict[lastKey] === 'string') {
-    return dict[lastKey];
+    if (typeof current === 'string') {
+      return current;
+    }
   }
 
   return undefined;
@@ -98,22 +94,9 @@ export function LanguageProvider({ children }) {
       result = getNestedValue(translations.en, key);
     }
 
-    // If still missing, log in development and return readable fallback string
+    // If still missing, return empty string so fallback expressions (e.g. t(key) || 'Default') work properly
     if (result === undefined) {
-      if (import.meta.env?.DEV) {
-        console.warn(`[i18n] Missing translation key "${key}" for language "${language}"`);
-      }
-      // If key is dotted (e.g. auth.signInButton), return humanized last segment (e.g. "Sign In Button" or "Sign In")
-      if (key.includes('.')) {
-        const lastPart = key.split('.').pop() || '';
-        const humanized = lastPart
-          .replace(/Button$/, '')
-          .replace(/([A-Z])/g, ' $1')
-          .replace(/^./, str => str.toUpperCase())
-          .trim();
-        return humanized || key;
-      }
-      return key;
+      return '';
     }
 
     // Apply variable interpolation if params provided

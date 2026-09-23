@@ -310,10 +310,14 @@ export class AIService {
 
     // 2. Online: Call backend /api/ai/chat endpoint (with fallback to /api/chat)
     try {
+      const planHeader = userContext.planCode || '';
       let endpoint = `${getBaseUrl()}/api/ai/chat`;
       let response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-plan': planHeader
+        },
         signal,
         body: JSON.stringify({
           message: userQuery,
@@ -331,7 +335,10 @@ export class AIService {
         endpoint = `${getBaseUrl()}/api/chat`;
         response = await fetch(endpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-plan': planHeader
+          },
           signal,
           body: JSON.stringify({
             message: userQuery,
@@ -343,6 +350,22 @@ export class AIService {
             customSystemPrompt
           })
         });
+      }
+
+      if (response.status === 403) {
+        const errData = await safeJson(response, {});
+        return {
+          text: errData.message || 'Voice AI is available exclusively on the SmritiCare Premium plan. Please upgrade your subscription to chat with Smriti.',
+          replyText: errData.message || 'Voice AI is available exclusively on the SmritiCare Premium plan. Please upgrade your subscription to chat with Smriti.',
+          intent: 'UPGRADE_REQUIRED',
+          action: { type: 'NAVIGATE', path: '/economy?tab=subscriptions' },
+          language,
+          timestamp: new Date().toISOString(),
+          source: 'plan_restricted',
+          isLocked: true,
+          requiredPlan: 'PREMIUM',
+          error: errData.message || 'Advanced Voice AI requires a Premium subscription.'
+        };
       }
 
       if (response.status === 429 || response.status >= 500) {

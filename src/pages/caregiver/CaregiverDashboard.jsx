@@ -31,6 +31,7 @@ import {
   Coffee,
   Check,
   FileText,
+  MapPin,
   Settings as SettingsIcon,
   HelpCircle
 } from 'lucide-react';
@@ -39,13 +40,16 @@ import ReminderManagerModal from '../../components/caregiver/ReminderManagerModa
 import AddPatientModal from '../../components/caregiver/AddPatientModal';
 import WeeklyReportView from './WeeklyReportView';
 import SyncSettingsView from './SyncSettingsView';
+import CaregiverLocationView from './CaregiverLocationView';
 import UserMenu from '../../components/common/UserMenu';
+import FeatureGate from '../../components/common/FeatureGate';
 import { SmritiLogo } from '../../components/common/NerIcons';
 import { db } from '../../db/dexie';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage, SUPPORTED_LANGUAGES } from '../../context/LanguageContext';
 import { useAssistant } from '../../context/AssistantContext';
+import { FEATURE_KEYS } from '../../services/subscriptionService';
 
 export default function CaregiverDashboard() {
   const { currentUser } = useAuth();
@@ -306,6 +310,7 @@ export default function CaregiverDashboard() {
               {[
                 { id: 'home', label: t('navigation.home') || 'Home', icon: Home },
                 { id: 'loved-one', label: t('caregiver.lovedOne') || 'Loved One', icon: Heart },
+                { id: 'location', label: t('location.patientLocation') || 'Patient Location', icon: MapPin },
                 { id: 'daily-care', label: t('caregiver.dailyCare') || 'Daily Care', icon: CalendarCheck },
                 { id: 'medication', label: t('caregiver.medication') || 'Medication', icon: Pill },
                 { id: 'reports', label: t('navigation.reports') || 'Reports', icon: FileText },
@@ -448,11 +453,44 @@ export default function CaregiverDashboard() {
                   &larr; Back to Caregiver Dashboard
                 </button>
               </div>
-              <WeeklyReportView
-                patient={activePatient}
-                scores={rawScores}
-                sessions={rawSessions}
-                reminders={rawReminders}
+              <FeatureGate
+                feature={FEATURE_KEYS.EXPORTABLE_REPORTS}
+                title="Caregiver Reports & PHC Summaries"
+                description="Longitudinal cognitive telemetry, PHC summaries, and exportable PDF clinical reports are accessible on Standard and Premium membership tiers."
+              >
+                <WeeklyReportView
+                  patient={activePatient}
+                  scores={rawScores}
+                  sessions={rawSessions}
+                  reminders={rawReminders}
+                />
+              </FeatureGate>
+            </div>
+          )}
+
+          {/* Sub-view: Patient Location & Safe-Zone View matching Reference Image */}
+          {activeTab === 'location' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('home')}
+                  className="text-xs font-medium text-[#C86D51] dark:text-[#D97757] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  {t('caregiver.backToDashboard') || '← Back to Caregiver Dashboard'}
+                </button>
+              </div>
+              <CaregiverLocationView
+                activePatient={activePatient}
+                assignedPatients={assignedPatients}
+                selectedPatientId={selectedPatientId}
+                onSelectPatient={(id) => {
+                  setSelectedPatientId(id);
+                  localStorage.setItem('smriti_selected_caregiver_patient_id', String(id));
+                }}
+                onAddPatient={() => setShowAddPatientModal(true)}
+                onCallPatient={() => setShowReminderModal(true)}
+                caregiverName={currentUser?.name || 'Rahul Sharma'}
               />
             </div>
           )}
@@ -954,7 +992,8 @@ export default function CaregiverDashboard() {
           isOpen={showReminderModal}
           onClose={() => setShowReminderModal(false)}
           targetUserId={selectedPatientId}
-          patientName={activePatient?.name || 'Loved One'}
+          patientId={selectedPatientId}
+          patientName={activePatient?.name || 'Bimala Borah (Amma)'}
         />
       )}
 

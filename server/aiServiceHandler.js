@@ -412,6 +412,20 @@ export async function handleChat(req, res) {
       return sendJson(res, 400, { error: 'Message is required' });
     }
 
+    // Server-Side Plan Entitlement Guard: Voice AI is exclusive to Premium Plan
+    const headerPlan = req.headers ? (req.headers['x-user-plan'] || req.headers['X-User-Plan']) : '';
+    const activePlan = (userContext.planCode || headerPlan || 'FREE').toString().toUpperCase();
+
+    if (activePlan !== 'PREMIUM') {
+      return sendJson(res, 403, {
+        error: 'FEATURE_LOCKED',
+        code: 'SUBSCRIPTION_REQUIRED',
+        message: 'Advanced Voice AI Companion is exclusive to SmritiCare Premium (₹899/mo). Please upgrade your subscription plan to access AI chat and voice features.',
+        requiredPlan: 'PREMIUM',
+        currentPlan: activePlan
+      });
+    }
+
     const userQuery = message.trim();
     const intent = extractIntent('', userQuery);
     const action = detectAction(intent, userQuery);

@@ -82,6 +82,7 @@ export default function SoundsOfHillsGame() {
   const [mistakes, setMistakes] = useState(0);
   const [timeLeft, setTimeLeft] = useState(15);
   const [startTime, setStartTime] = useState(null);
+  const [adaptationData, setAdaptationData] = useState(null);
   const [feedback, setFeedback] = useState(null);
 
   const roundTimerRef = useRef(null);
@@ -244,6 +245,9 @@ export default function SoundsOfHillsGame() {
           if (result) {
             setContinuousDiff(result.newDifficulty);
             setDifficulty(result.discreteLevel);
+            if (result.adaptation) {
+              setAdaptationData(result.adaptation);
+            }
             if (result.encouragementMessage) {
               setAdaptiveSupport(result.encouragementMessage);
             }
@@ -443,6 +447,8 @@ export default function SoundsOfHillsGame() {
           stars={score >= 75 ? 3 : score >= 50 ? 2 : 1}
           timeTaken={15}
           mistakes={mistakes}
+          adaptationData={adaptationData}
+          difficultyLevel={difficulty}
           onPlayAgain={startGame}
           onNext={handleNextActivity}
           gameName="Sounds of the Hills"

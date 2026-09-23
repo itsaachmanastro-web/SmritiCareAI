@@ -144,8 +144,8 @@ export const INITIAL_SUBSCRIPTION_PLANS = [
     priceYearly: 0,
     dailyCreditLimit: 200,
     monthlyCreditAllowance: 0,
-    features: ['basic_games', 'basic_reminders', 'basic_ai'],
-    description: 'Essential cognitive care and daily memory exercises for elders and families.',
+    features: ['basic_games', 'basic_reminders'],
+    description: 'Essential cognitive care, basic memory games, and daily medication & water reminders.',
     isActive: true
   },
   {
@@ -156,8 +156,8 @@ export const INITIAL_SUBSCRIPTION_PLANS = [
     priceYearly: 2499,
     dailyCreditLimit: 350,
     monthlyCreditAllowance: 250,
-    features: ['basic_games', 'basic_reminders', 'enhanced_ai', 'all_cultural_games', 'personalized_prompts'],
-    description: 'Extended cognitive activities, enhanced memory games, and monthly reward bonus.',
+    features: ['basic_games', 'basic_reminders', 'all_cultural_games'],
+    description: 'Extended cognitive activities, all cultural heritage games & stages, and monthly reward bonus.',
     isActive: true
   },
   {
@@ -168,8 +168,8 @@ export const INITIAL_SUBSCRIPTION_PLANS = [
     priceYearly: 4999,
     dailyCreditLimit: 500,
     monthlyCreditAllowance: 600,
-    features: ['basic_games', 'basic_reminders', 'enhanced_ai', 'all_cultural_games', 'personalized_prompts', 'caregiver_tools', 'higher_credit_limits', 'exportable_reports'],
-    description: 'Comprehensive family care with advanced caregiver telemetry, reports, and higher rewards.',
+    features: ['basic_games', 'basic_reminders', 'all_cultural_games', 'caregiver_tools', 'exportable_reports'],
+    description: 'Comprehensive family care with advanced caregiver telemetry, PHC reports, and higher rewards.',
     isActive: true
   },
   {
@@ -180,7 +180,7 @@ export const INITIAL_SUBSCRIPTION_PLANS = [
     priceYearly: 8999,
     dailyCreditLimit: 800,
     monthlyCreditAllowance: 1200,
-    features: ['basic_games', 'basic_reminders', 'enhanced_ai', 'all_cultural_games', 'personalized_prompts', 'caregiver_tools', 'higher_credit_limits', 'exportable_reports', 'voice_ai', 'priority_support', 'premium_rewards'],
+    features: ['basic_games', 'basic_reminders', 'all_cultural_games', 'caregiver_tools', 'exportable_reports', 'voice_ai', 'priority_support', 'premium_rewards'],
     description: 'Full SmritiCare experience: voice AI interaction, priority care tools, and maximum reward allowances.',
     isActive: true
   }
@@ -496,6 +496,54 @@ db.version(7).stores({
   }
 });
 
+// Version 8 (Secure Live GPS Location Tracking & Safe-Zone Geofencing)
+db.version(8).stores({
+  users: '++id, email, role, name, isDemo, isVerified, status, createdAt, updatedAt, lastLoginAt',
+  sessions: '++id, userId, token, expiresAt, createdAt',
+  patientProfiles: '++id, userId, isDemo, name, age, location, createdAt, updatedAt',
+  gameSessions: '++id, userId, patientId, isDemo, gameName, gameType, score, difficultyLevel, completedAt, createdAt',
+  cognitiveScores: '++id, userId, patientId, isDemo, date, domain, category, score, timestamp, createdAt',
+  reminders: '++id, userId, patientId, isDemo, targetUserId, createdBy, scheduledAt, status, title, time, dueAt, done, completed, type, createdAt, updatedAt',
+  healthRecords: '++id, userId, patientId, isDemo, type, title, date, createdAt',
+  conversations: '++id, userId, isDemo, role, timestamp, createdAt',
+  syncQueue: '++id, userId, patientId, isDemo, entityType, entityId, operation, status, createdAt, retryCount, lastAttemptAt',
+  creditBalances: 'userId, balance, lifetimeEarned, lifetimeSpent, lastUpdated',
+  creditTransactions: '++id, userId, type, amount, reason, source, timestamp, status, balanceAfter',
+  subscriptionPlans: 'id, code, name, priceMonthly, priceYearly, features, dailyCreditLimit, monthlyCreditAllowance, isActive',
+  userSubscriptions: '++id, userId, planCode, status, startDate, renewalDate, endDate, autoRenew',
+  rewards: 'id, title, description, category, creditCost, inventory, isDigital, status, image',
+  rewardRedemptions: '++id, userId, rewardId, rewardTitle, creditCost, status, isDigital, digitalCode, requiresCaregiverApproval, caregiverApproved, redeemedAt',
+  dailyActivityTracker: '++id, [userId+date], userId, date, creditsEarnedToday, completedActivities',
+  userSettings: '++id, userId, requireCaregiverApproval',
+  notifications: '++id, userId, type, priority, isRead, isDismissed, scheduledAt, createdAt, [userId+isRead], [userId+type], idempotencyKey',
+  adaptiveProfiles: 'userId, overallDifficulty, memoryMatch, sequenceMemory, patternRecognition, auditoryAttention, updatedAt',
+  gameChallenges: '++id, userId, sessionId, gameType, difficulty, questionId, contentHash, correct, responseTimeMs, hintsUsed, retries, skipped, score, completedAt, [userId+gameType]',
+  usedQuestionFingerprints: '++id, userId, contentHash, gameType, templateId, usedAt, [userId+contentHash]',
+  activityRecords: '++id, userId, patientId, isDemo, activityType, gameType, domain, score, accuracy, mistakes, durationSeconds, difficulty, completed, timestamp, date, createdAt, [userId+date], [userId+isDemo]',
+  // Patient Location Tracking & Safe-Zone Geofencing Stores:
+  patientLocations: '++id, patientId, isDemo, latitude, longitude, accuracy, timestamp, heading, speed, source, status, createdAt, [patientId+timestamp]',
+  safeZones: 'patientId, centerLatitude, centerLongitude, radiusMeters, enabled, name, updatedAt',
+  locationAlerts: '++id, patientId, caregiverId, type, message, distanceMeters, latitude, longitude, timestamp, resolved, createdAt'
+}).upgrade(async (tx) => {
+  console.log('Dexie v8: patientLocations, safeZones, and locationAlerts tables ready.');
+  try {
+    const existingSafeZones = await tx.table('safeZones').count();
+    if (existingSafeZones === 0) {
+      await tx.table('safeZones').put({
+        patientId: 1,
+        centerLatitude: 26.7509,
+        centerLongitude: 94.2037,
+        radiusMeters: 500,
+        name: 'Home Safe Zone (Jorhat)',
+        enabled: true,
+        updatedAt: new Date().toISOString()
+      });
+    }
+  } catch (err) {
+    console.warn('Dexie v8 migration notice:', err);
+  }
+});
+
 // Explicit helper to ensure economy tables are seeded even after database open
 export async function seedEconomyTables(targetDb = db) {
   try {
@@ -641,6 +689,219 @@ export async function seedAdaptiveProfiles(targetDb = db) {
   }
 }
 
+// Explicit helper to seed baseline safe zone for demo patient
+export async function seedSafeZones(targetDb = db) {
+  try {
+    if (!targetDb.safeZones) return;
+    const safeZoneCount = await targetDb.safeZones.count();
+    if (safeZoneCount > 0) return;
+
+    await targetDb.safeZones.put({
+      patientId: 1,
+      centerLatitude: 26.7509,
+      centerLongitude: 94.2037,
+      radiusMeters: 500,
+      name: 'Home Safe Zone (Jorhat)',
+      enabled: true,
+      updatedAt: new Date().toISOString()
+    });
+    console.log('🌱 Seeded baseline safe zone for patient #1.');
+  } catch (err) {
+    console.warn('Failed to seed safe zones:', err);
+  }
+}
+
+// Explicit helper to guarantee all 3 demo identities (Patient, Caregiver, Healthcare) exist
+export async function ensureDemoUsers(targetDb = db) {
+  try {
+    if (!targetDb.isOpen()) {
+      await targetDb.open();
+    }
+
+    // 1. Ensure Patient Demo User (Bimala Borah / Amma)
+    let patient = await targetDb.users.where('email').equalsIgnoreCase('amma@smriticare.org').first();
+    if (!patient) {
+      patient = await targetDb.users.where('role').equals('patient').first();
+    }
+
+    let patientId = patient?.id;
+    if (!patient) {
+      patientId = await targetDb.users.add({
+        name: 'Bimala Borah (Amma)',
+        role: 'patient',
+        email: 'amma@smriticare.org',
+        avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=256',
+        pin: '1234',
+        language: 'as',
+        age: 74,
+        location: 'Jorhat, Assam',
+        isDemo: true,
+        isVerified: false,
+        status: 'demo',
+        createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      patient = await targetDb.users.get(patientId);
+    }
+
+    // Ensure Patient Profile exists
+    if (patientId) {
+      const profile = await targetDb.patientProfiles.where('userId').equals(patientId).first();
+      if (!profile) {
+        await targetDb.patientProfiles.add({
+          userId: patientId,
+          isDemo: true,
+          name: patient.name || 'Bimala Borah (Amma)',
+          age: patient.age || 74,
+          location: patient.location || 'Jorhat, Assam',
+          phcCenter: 'Titabar PHC, Jorhat',
+          primaryCaregiver: 'Priya Borah',
+          createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+          updatedAt: new Date().toISOString()
+        });
+      }
+    }
+
+    // 2. Ensure Caregiver Demo User (Priya Borah)
+    let caregiver = await targetDb.users.where('email').equalsIgnoreCase('priya@smriticare.org').first();
+    if (!caregiver) {
+      caregiver = await targetDb.users.where('role').equals('caregiver').first();
+    }
+
+    if (!caregiver) {
+      const caregiverId = await targetDb.users.add({
+        name: 'Priya Borah',
+        role: 'caregiver',
+        avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=256',
+        email: 'priya@smriticare.org',
+        passwordHash: 'demo123',
+        relation: 'Daughter',
+        phone: '+91 94350 12345',
+        linkedPatientId: patientId || 1,
+        isDemo: true,
+        isVerified: false,
+        status: 'demo',
+        createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      caregiver = await targetDb.users.get(caregiverId);
+    }
+
+    // 3. Ensure Healthcare Professional Demo User (Dr. Arun Phukan)
+    let healthcare = await targetDb.users.where('email').equalsIgnoreCase('phukan@health.assam.gov.in').first();
+    if (!healthcare) {
+      healthcare = await targetDb.users.where('role').anyOf(['healthcare', 'clinician', 'healthcare_worker']).first();
+    }
+
+    if (!healthcare) {
+      const healthcareId = await targetDb.users.add({
+        name: 'Dr. Arun Phukan',
+        role: 'healthcare',
+        avatar: 'https://images.unsplash.com/photo-1622253692010-333f2da6031d?auto=format&fit=crop&q=80&w=256',
+        email: 'phukan@health.assam.gov.in',
+        passwordHash: 'demo123',
+        designation: 'PHC Medical Officer, Titabar',
+        isDemo: true,
+        isVerified: false,
+        status: 'demo',
+        createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      healthcare = await targetDb.users.get(healthcareId);
+    }
+
+    // 4. Ensure Baseline Clinical & Cognitive Telemetry for Dashboards
+    if (patientId) {
+      const scoresCount = await targetDb.cognitiveScores.where('patientId').equals(patientId).count();
+      if (scoresCount === 0) {
+        const now = new Date();
+        const demoDays = [
+          { daysAgo: 2, domain: 'pattern', gameName: 'Mekhela Pattern Match', score: 85, duration: 75, correct: 5, mistakes: 1, diff: 'medium' },
+          { daysAgo: 1, domain: 'memory', gameName: 'Bihu Memory Bihu', score: 90, duration: 88, correct: 6, mistakes: 1, diff: 'medium' },
+          { daysAgo: 0, domain: 'routine', gameName: 'Morning at the Tea Garden', score: 95, duration: 65, correct: 5, mistakes: 0, diff: 'easy' }
+        ];
+
+        const scoresToInsert = [];
+        const activitiesToInsert = [];
+
+        demoDays.forEach((item) => {
+          const d = new Date(now);
+          d.setDate(d.getDate() - item.daysAgo);
+          const dateStr = d.toISOString().split('T')[0];
+          const iso = d.toISOString();
+
+          scoresToInsert.push({
+            userId: patientId,
+            patientId: patientId,
+            isDemo: true,
+            date: dateStr,
+            domain: item.domain,
+            category: item.domain,
+            score: item.score,
+            timestamp: iso,
+            createdAt: iso
+          });
+
+          activitiesToInsert.push({
+            userId: patientId,
+            patientId: patientId,
+            isDemo: true,
+            activityType: 'game',
+            gameType: item.domain,
+            domain: item.domain,
+            activityName: item.gameName,
+            score: item.score,
+            accuracy: Math.round((item.correct / (item.correct + item.mistakes)) * 100),
+            mistakes: item.mistakes,
+            durationSeconds: item.duration,
+            difficulty: item.diff,
+            completed: true,
+            timestamp: iso,
+            date: dateStr,
+            createdAt: iso
+          });
+        });
+
+        await targetDb.cognitiveScores.bulkAdd(scoresToInsert);
+        await targetDb.activityRecords.bulkAdd(activitiesToInsert);
+      }
+
+      const healthCount = await targetDb.healthRecords.where('patientId').equals(patientId).count();
+      if (healthCount === 0) {
+        await targetDb.healthRecords.bulkAdd([
+          {
+            userId: patientId,
+            patientId: patientId,
+            isDemo: true,
+            type: 'screening',
+            title: 'Initial MoCA Cognitive Screening - Mild Cognitive Impairment (Score: 21/30)',
+            date: new Date(Date.now() - 25 * 86400000).toISOString().split('T')[0],
+            doctor: 'Dr. Arun Phukan',
+            phcCenter: 'Titabar PHC',
+            createdAt: new Date(Date.now() - 25 * 86400000).toISOString()
+          },
+          {
+            userId: patientId,
+            patientId: patientId,
+            isDemo: true,
+            type: 'vitals',
+            title: 'Blood Pressure & Heart Rate Log (128/82 mmHg, HR 74 bpm)',
+            date: new Date().toISOString().split('T')[0],
+            doctor: 'Community Health Worker Borah',
+            phcCenter: 'Home Visit',
+            createdAt: new Date().toISOString()
+          }
+        ]);
+      }
+    }
+
+    return { patient, caregiver, healthcare };
+  } catch (err) {
+    console.warn('ensureDemoUsers note:', err);
+    return null;
+  }
+}
+
 // Explicit database open with robust error reporting
 export async function initializeDatabase() {
   try {
@@ -650,6 +911,8 @@ export async function initializeDatabase() {
     await seedEconomyTables(db);
     await seedInitialNotifications(db);
     await seedAdaptiveProfiles(db);
+    await seedSafeZones(db);
+    await ensureDemoUsers(db);
     console.log(`✅ IndexedDB "${db.name}" (v${db.verno}) connected successfully.`);
     return true;
   } catch (err) {
@@ -662,8 +925,9 @@ export async function initializeDatabase() {
 export async function seedDatabaseIfEmpty() {
   try {
     await initializeDatabase();
+    await ensureDemoUsers(db);
     const userCount = await db.users.count();
-    if (userCount > 0) return; // already seeded
+    if (userCount >= 3) return; // already seeded
 
     console.log('🌱 Seeding initial SmritiCare database records...');
 
@@ -683,7 +947,10 @@ export async function seedDatabaseIfEmpty() {
       db.userSettings,
       db.notifications,
       db.adaptiveProfiles,
-      db.activityRecords
+      db.activityRecords,
+      db.patientLocations,
+      db.safeZones,
+      db.locationAlerts
     ], async () => {
       const patientId = await db.users.add({
         name: 'Bimala Borah (Amma)',

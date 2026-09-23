@@ -73,6 +73,82 @@ export function discreteLevelToScore(level) {
 }
 
 /**
+ * Formats a score or level string into a standardized readable level descriptor
+ */
+export function formatDifficultyLevel(scoreOrLevel) {
+  if (typeof scoreOrLevel === 'string') {
+    const s = scoreOrLevel.toLowerCase();
+    if (s.includes('1') || s === 'easy') return { levelNum: 1, label: 'Level 1 (Easy)', short: 'Level 1' };
+    if (s.includes('3') || s === 'hard' || s === 'advanced') return { levelNum: 3, label: 'Level 3 (Hard)', short: 'Level 3' };
+    return { levelNum: 2, label: 'Level 2 (Medium)', short: 'Level 2' };
+  }
+  const s = Number(scoreOrLevel);
+  if (isNaN(s)) return { levelNum: 2, label: 'Level 2 (Medium)', short: 'Level 2' };
+
+  if (s > 1.0) {
+    // 1.0 - 10.0 scale (e.g. Memory Motion)
+    if (s < 4.0) return { levelNum: 1, label: `Level 1 (${s.toFixed(1)})`, short: `Level 1` };
+    if (s < 7.0) return { levelNum: 2, label: `Level 2 (${s.toFixed(1)})`, short: `Level 2` };
+    return { levelNum: 3, label: `Level 3 (${s.toFixed(1)})`, short: `Level 3` };
+  }
+
+  // 0.0 - 1.0 scale
+  const discrete = scoreToDiscreteLevel(s);
+  return formatDifficultyLevel(discrete);
+}
+
+/**
+ * Generates structured AI adaptation telemetry and human-readable reason
+ */
+export function evaluateAdaptationResult({
+  difficultyBefore = 0.50,
+  difficultyAfter = 0.50,
+  accuracy = 100,
+  mistakes = 0,
+  consecutiveCorrect = 0,
+  consecutiveMistakes = 0
+}) {
+  const beforeFmt = formatDifficultyLevel(difficultyBefore);
+  const afterFmt = formatDifficultyLevel(difficultyAfter);
+
+  const numBefore = Number(difficultyBefore) || 0.50;
+  const numAfter = Number(difficultyAfter) || 0.50;
+  const acc = Math.round(Number(accuracy) || 100);
+
+  let direction = 'maintained';
+  if (numAfter > numBefore + 0.02 || (beforeFmt.levelNum < afterFmt.levelNum)) {
+    direction = 'increased';
+  } else if (numAfter < numBefore - 0.02 || (beforeFmt.levelNum > afterFmt.levelNum)) {
+    direction = 'decreased';
+  }
+
+  let reason = 'Steady consistency maintaining optimal cognitive engagement.';
+  if (consecutiveMistakes >= 2 || mistakes >= 3 || acc < 60) {
+    reason = 'Supportive easing after challenging questions to keep activities relaxing.';
+  } else if (consecutiveCorrect >= 4 || (acc >= 90 && mistakes === 0)) {
+    reason = 'High accuracy across recent activities.';
+  } else if (acc >= 85) {
+    reason = 'High accuracy across recent activities.';
+  } else if (direction === 'increased') {
+    reason = 'Strong performance and steady response confidence.';
+  } else if (direction === 'decreased') {
+    reason = 'Supportive easing to maintain a gentle and comfortable pace.';
+  }
+
+  return {
+    direction,
+    previousDifficulty: beforeFmt.short,
+    previousDifficultyFull: beforeFmt.label,
+    newDifficulty: afterFmt.short,
+    newDifficultyFull: afterFmt.label,
+    previousLevel: beforeFmt.levelNum,
+    newLevel: afterFmt.levelNum,
+    accuracy: acc,
+    reason
+  };
+}
+
+/**
  * Evaluates new continuous difficulty based on recent performance window
  */
 export function calculateAdaptedDifficulty({

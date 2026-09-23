@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X, Trash2, Send, Mic, Radio, Volume2, Sparkles, AlertCircle, PhoneCall, ShieldCheck, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import VoiceButton from './VoiceButton';
@@ -21,6 +21,7 @@ export default function VoiceAssistantModal({
   currentScore = undefined,
   onOpenEmergency = null
 }) {
+  const navigate = useNavigate();
   const { language, setLanguage } = useLanguage();
   const { role } = useAuth();
   const [typedInput, setTypedInput] = useState('');
@@ -33,6 +34,9 @@ export default function VoiceAssistantModal({
     errorMessage,
     isSpeaking,
     currentLangConfig,
+    canAccessVoiceAi,
+    planCode,
+    planName,
     startVoiceInput,
     stopVoiceInput,
     processQuery,
@@ -134,6 +138,35 @@ export default function VoiceAssistantModal({
           <div className="my-2 p-2.5 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-center gap-2 text-amber-900 dark:text-amber-200 text-xs font-semibold">
             <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
             <span>{currentLangConfig.limitedNotice}</span>
+          </div>
+        )}
+
+        {/* Premium Entitlement Banner if locked */}
+        {!canAccessVoiceAi && (
+          <div className="my-2 p-3 bg-gradient-to-r from-amber-500/15 via-teal-500/10 to-emerald-500/15 dark:from-amber-950/40 dark:to-teal-950/40 border border-amber-300 dark:border-amber-700/60 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                  Voice AI is a Premium Feature
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  Current plan: <span className="font-bold">{planName}</span> &bull; Upgrade to Premium (₹899)
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                navigate('/economy?tab=subscriptions');
+              }}
+              className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shrink-0 transition-transform active:scale-95 shadow-xs cursor-pointer"
+            >
+              Upgrade
+            </button>
           </div>
         )}
 

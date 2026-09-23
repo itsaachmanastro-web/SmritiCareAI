@@ -67,6 +67,9 @@ export default function AiAssistantDrawer({
     errorMessage,
     isSpeaking,
     currentLangConfig,
+    canAccessVoiceAi,
+    planCode,
+    planName,
     startVoiceInput,
     stopVoiceInput,
     processQuery,
@@ -335,6 +338,35 @@ export default function AiAssistantDrawer({
             ) : (
               // Normal Assistant View
               <div className="flex-1 flex flex-col overflow-hidden px-4 py-3 space-y-3">
+                {/* Premium Entitlement Banner if locked */}
+                {!canAccessVoiceAi && (
+                  <div className="p-3 bg-gradient-to-r from-amber-500/15 via-teal-500/10 to-emerald-500/15 dark:from-amber-950/40 dark:to-teal-950/40 border border-amber-300 dark:border-amber-700/60 rounded-2xl flex items-center justify-between gap-3 shrink-0 shadow-xs">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                        <Sparkles className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-[#142823] dark:text-white truncate">
+                          Voice AI is a Premium Feature
+                        </p>
+                        <p className="text-[11px] text-[#5C756D] dark:text-[#7E9C94] truncate">
+                          Current plan: <span className="font-bold">{planName}</span> &bull; Upgrade to Premium (₹899)
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        navigate('/economy?tab=subscriptions');
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black shrink-0 transition-transform active:scale-95 shadow-xs cursor-pointer"
+                    >
+                      Upgrade
+                    </button>
+                  </div>
+                )}
+
                 {/* Active Context Banner if inside a Game */}
                 {currentGameName && (
                   <div className="px-3 py-2 bg-[#E8F3ED] dark:bg-[#102923] border border-[#BAD9C6] dark:border-[#183830] rounded-2xl flex items-center justify-between text-xs font-bold text-[#143D30] dark:text-[#34D399] shrink-0">
@@ -426,7 +458,7 @@ export default function AiAssistantDrawer({
                     type="text"
                     value={typedInput}
                     onChange={(e) => setTypedInput(e.target.value)}
-                    placeholder={t('menu.askPrompt') || 'Ask Smriti anything...'}
+                    placeholder={!canAccessVoiceAi ? 'Premium required to chat with Smriti...' : (t('menu.askPrompt') || 'Ask Smriti anything...')}
                     className="flex-1 px-4 py-3 rounded-full border border-[#DFEAE2] dark:border-[#183830] bg-white dark:bg-[#0E221E] text-[#142823] dark:text-[#F0F6F4] text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[#143D30] dark:focus:ring-[#2DD4BF] transition-all shadow-inner"
                   />
                   <button

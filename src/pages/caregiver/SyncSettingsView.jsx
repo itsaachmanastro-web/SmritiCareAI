@@ -16,11 +16,17 @@ import {
   Layers,
   Users,
   UserCheck,
-  FileCheck
+  FileCheck,
+  MapPin,
+  Key,
+  Eye,
+  EyeOff,
+  ExternalLink
 } from 'lucide-react';
 import { db, getDatabaseDiagnostics } from '../../db/dexie';
 import { syncNow, getSyncStats } from '../../db/syncService';
 import { getAppMode, setAppMode, APP_MODES } from '../../config/appMode';
+import { mapsConfigService } from '../../services/location/mapsConfigService';
 
 export default function SyncSettingsView() {
   const [currentMode, setCurrentMode] = useState(getAppMode());
@@ -62,6 +68,15 @@ export default function SyncSettingsView() {
   const [syncStatusMsg, setSyncStatusMsg] = useState(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  // Google Maps API Configuration State
+  const [mapsApiKey, setMapsApiKey] = useState('');
+  const [showMapsKey, setShowMapsKey] = useState(false);
+  const [isMapsConfigured, setIsMapsConfigured] = useState(false);
+  const [isSavingMapsKey, setIsSavingMapsKey] = useState(false);
+  const [isTestingMapsKey, setIsTestingMapsKey] = useState(false);
+  const [mapsTestResult, setMapsTestResult] = useState(null);
+  const [mapsToastMessage, setMapsToastMessage] = useState('');
+
   useEffect(() => {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
@@ -70,12 +85,51 @@ export default function SyncSettingsView() {
     window.addEventListener('offline', handleOffline);
 
     loadDiagnostics();
+    loadMapsStatus();
 
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const loadMapsStatus = async () => {
+    try {
+      const res = await mapsConfigService.getStatus();
+      setIsMapsConfigured(Boolean(res.hasKey));
+    } catch (e) {
+      console.warn('Could not load maps status:', e);
+    }
+  };
+
+  const handleSaveMapsKey = async (e) => {
+    if (e) e.preventDefault();
+    if (!mapsApiKey.trim()) {
+      setMapsToastMessage('Please enter a valid Google Maps API key.');
+      return;
+    }
+
+    setIsSavingMapsKey(true);
+    setMapsToastMessage('');
+    const res = await mapsConfigService.saveKey(mapsApiKey);
+    setIsSavingMapsKey(false);
+
+    if (res.success) {
+      setIsMapsConfigured(true);
+      setMapsToastMessage('Google Maps API key saved securely on server.');
+      setTimeout(() => setMapsToastMessage(''), 4000);
+    } else {
+      setMapsToastMessage(res.error || 'Failed to save Google Maps key');
+    }
+  };
+
+  const handleTestMapsConnection = async () => {
+    setIsTestingMapsKey(true);
+    setMapsTestResult(null);
+    const res = await mapsConfigService.testConnection(mapsApiKey || null);
+    setIsTestingMapsKey(false);
+    setMapsTestResult(res);
+  };
 
   const loadDiagnostics = async (modeOverride = null) => {
     setIsRefreshing(true);
@@ -508,6 +562,123 @@ export default function SyncSettingsView() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* GOOGLE MAPS API CONFIGURATION SECTION */}
+      <div className="bg-white dark:bg-[#131D33] rounded-3xl p-6 md:p-8 border border-slate-200 dark:border-[#243352] shadow-sm space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-[#243352]">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-[#0E2420] text-emerald-700 dark:text-[#2DD4BF] flex items-center justify-center font-bold">
+              <MapPin className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                Google Maps API Configuration
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
+                Configure Google Maps & Geocoding API keys for live patient satellite tracking.
+              </p>
+            </div>
+          </div>
+
+          {/* Status Badge */}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#1E293B] border border-slate-200 dark:border-[#243352] text-xs font-bold">
+            <span className={`w-2.5 h-2.5 rounded-full ${isMapsConfigured ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
+            <span className={isMapsConfigured ? 'text-emerald-700 dark:text-[#2DD4BF]' : 'text-amber-700 dark:text-amber-400'}>
+              {isMapsConfigured ? '● Connected' : '● Not Connected (OSM Active)'}
+            </span>
+          </div>
+        </div>
+
+        {/* Input Form */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold text-slate-800 dark:text-white">
+              Google Maps API Key (Server Environment)
+            </label>
+            <a
+              href="https://console.cloud.google.com/google/maps-apis/credentials"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-semibold text-smriti-teal-700 dark:text-[#2DD4BF] hover:underline flex items-center gap-1"
+            >
+              <span>Get API Key</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-2.5">
+            <div className="relative flex-1 w-full">
+              <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                type={showMapsKey ? 'text' : 'password'}
+                placeholder={isMapsConfigured ? '••••••••••••••••••••••••••••••••' : 'AIzaSy... (Enter Google Maps API Key)'}
+                value={mapsApiKey}
+                onChange={(e) => setMapsApiKey(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-[#1E293B] text-xs font-mono text-slate-900 dark:text-white placeholder-slate-400 rounded-2xl pl-10 pr-10 py-3 border border-slate-200 dark:border-[#243352] focus:border-smriti-teal-500 outline-none transition-all"
+              />
+              <button
+                type="button"
+                onClick={() => setShowMapsKey(!showMapsKey)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              >
+                {showMapsKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleSaveMapsKey}
+                disabled={isSavingMapsKey}
+                className="flex-1 sm:flex-none px-5 py-3 rounded-2xl bg-smriti-teal-600 hover:bg-smriti-teal-700 disabled:opacity-50 text-white font-bold text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap"
+              >
+                {isSavingMapsKey ? 'Saving...' : 'Save API Key'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleTestMapsConnection}
+                disabled={isTestingMapsKey}
+                className="flex-1 sm:flex-none px-4 py-3 rounded-2xl bg-slate-100 dark:bg-[#1E293B] hover:bg-slate-200 dark:hover:bg-[#25334D] border border-slate-300 dark:border-[#243352] text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isTestingMapsKey ? 'animate-spin text-smriti-teal-600' : ''}`} />
+                <span>{isTestingMapsKey ? 'Testing...' : 'Test Connection'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Toast Notice */}
+        {mapsToastMessage && (
+          <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-[#0E2420] border border-emerald-300 dark:border-emerald-800 text-xs font-bold text-emerald-900 dark:text-emerald-200 flex items-center gap-2.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{mapsToastMessage}</span>
+          </div>
+        )}
+
+        {/* Diagnostic Response Banner */}
+        {mapsTestResult && (
+          <div className={`p-4 rounded-2xl border text-xs leading-relaxed ${
+            mapsTestResult.connected
+              ? 'bg-emerald-50 dark:bg-[#0E2420] border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+              : 'bg-rose-50 dark:bg-[#2A1517] border-rose-300 dark:border-rose-800 text-rose-900 dark:text-rose-200'
+          }`}>
+            <div className="flex items-start gap-2.5">
+              {mapsTestResult.connected ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <span className="font-bold block">
+                  {mapsTestResult.connected ? 'Google Maps Connection Verified' : 'Diagnostic Notice'}
+                </span>
+                <p className="mt-0.5">{mapsTestResult.message}</p>
+              </div>
             </div>
           </div>
         )}

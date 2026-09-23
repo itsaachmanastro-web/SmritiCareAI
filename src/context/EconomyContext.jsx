@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './AuthContext';
 import {
   getCreditBalance,
@@ -13,13 +13,16 @@ import {
   getUserEntitlements,
   getSubscriptionPlans,
   changeSubscription,
-  cancelSubscription as cancelSubService
+  cancelSubscription as cancelSubService,
+  canPlanAccessFeature,
+  FEATURE_KEYS,
+  PLAN_CODES
 } from '../services/subscriptionService';
 
 const EconomyContext = createContext();
 
 export function EconomyProvider({ children }) {
-  const { currentUser } = useAuth();
+  const { currentUser, role } = useAuth();
 
   const [balance, setBalance] = useState(0);
   const [lifetimeEarned, setLifetimeEarned] = useState(0);
@@ -84,6 +87,20 @@ export function EconomyProvider({ children }) {
     refreshEconomy();
   }, [refreshEconomy]);
 
+  // Reactive subscription listener for instant multi-component updates
+  useEffect(() => {
+    const handleSubUpdate = (e) => {
+      if (!currentUser?.id) return;
+      const detailUid = e?.detail?.userId;
+      if (!detailUid || Number(detailUid) === Number(currentUser.id)) {
+        refreshEconomy();
+      }
+    };
+
+    window.addEventListener('smriti_subscription_updated', handleSubUpdate);
+    return () => window.removeEventListener('smriti_subscription_updated', handleSubUpdate);
+  }, [currentUser?.id, refreshEconomy]);
+
   // Award credits wrapper with state refresh
   const earnCredits = useCallback(async (params) => {
     if (!currentUser?.id) return { success: false, reason: 'User not logged in' };
@@ -126,17 +143,58 @@ export function EconomyProvider({ children }) {
     return res;
   }, [currentUser?.id, refreshEconomy]);
 
+  const activePlanCode = useMemo(() => {
+    return (entitlements?.planCode || subscription?.planCode || 'FREE').toUpperCase();
+  }, [entitlements?.planCode, subscription?.planCode]);
+
+  const activePlan = useMemo(() => {
+    const code = activePlanCode;
+    const p = plans.find(plan => plan.code === code);
+    return {
+      code,
+      name: p?.name || entitlements?.planName || (code === 'FREE' ? 'Free / Basic' : code),
+      ...p
+    };
+  }, [activePlanCode, plans, entitlements?.planName]);
+
+  const canAccessFeature = useCallback((featureKey) => {
+    return canPlanAccessFeature(activePlanCode, featureKey);
+  }, [activePlanCode]);
+
+  const canAccessAllGames = useMemo(() => {
+    return canPlanAccessFeature(activePlanCode, FEATURE_KEYS.ALL_CULTURAL_GAMES);
+  }, [activePlanCode]);
+
+  const canAccessReports = useMemo(() => {
+    return canPlanAccessFeature(activePlanCode, FEATURE_KEYS.EXPORTABLE_REPORTS);
+  }, [activePlanCode]);
+
+  const canAccessVoiceAi = useMemo(() => {
+    return canPlanAccessFeature(activePlanCode, FEATURE_KEYS.VOICE_AI);
+  }, [activePlanCode]);
+
+  const isCaregiverOrAdmin = role === 'caregiver' || role === 'healthcare' || currentUser?.role === 'admin';
+
   const value = {
     balance,
     lifetimeEarned,
     lifetimeSpent,
+    dailyEarned: dailyProgress.earnedToday || 0,
+    dailyLimit: dailyProgress.dailyLimit || 200,
     dailyProgress,
     subscription,
     entitlements,
+    activePlan,
+    activePlanCode,
     plans,
     recentTransactions,
     userRewards,
     isLoading,
+    isCaregiverOrAdmin,
+    canAccessFeature,
+    canAccessAllGames,
+    canAccessReports,
+    canAccessVoiceAi,
     refreshEconomy,
     earnCredits,
     redeemReward,
@@ -158,3 +216,4 @@ export function useEconomy() {
   }
   return context;
 }
+

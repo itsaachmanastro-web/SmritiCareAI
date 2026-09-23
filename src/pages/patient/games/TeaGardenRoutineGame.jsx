@@ -54,6 +54,7 @@ export default function TeaGardenRoutineGame() {
   const [placedSlots, setPlacedSlots] = useState([]);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [mistakes, setMistakes] = useState(0);
+  const [adaptationData, setAdaptationData] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
   // Fetch continuous difficulty from Adaptive Engine
@@ -139,6 +140,9 @@ export default function TeaGardenRoutineGame() {
           if (result) {
             setContinuousDiff(result.newDifficulty);
             setDifficulty(result.discreteLevel);
+            if (result.adaptation) {
+              setAdaptationData(result.adaptation);
+            }
             if (result.encouragementMessage) {
               setAdaptiveSupport(result.encouragementMessage);
             }
@@ -353,6 +357,8 @@ export default function TeaGardenRoutineGame() {
           stars={mistakes === 0 ? 3 : mistakes <= 2 ? 2 : 1}
           timeTaken={timerSeconds}
           mistakes={mistakes}
+          adaptationData={adaptationData}
+          difficultyLevel={difficulty}
           onPlayAgain={startGame}
           onNext={handleNextActivity}
           gameName="Morning at the Tea Garden"

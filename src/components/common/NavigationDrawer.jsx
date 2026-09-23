@@ -284,6 +284,21 @@ export default function NavigationDrawer({
                 <TrendingUp className="w-4 h-4 text-[#22C55E] dark:text-[#4ADE80] shrink-0" />
                 <span>{t('menu.progress') || 'Cognitive Progress & Stars'}</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => handleNavClick('/patient/safety')}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold text-[#142823] dark:text-[#E2EAE5] hover:bg-white dark:hover:bg-[#0E221E] hover:text-[#143D30] dark:hover:text-[#34D399] transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-[#2DD4BF] shrink-0" />
+                  <span>{t('location.locationAndSafety') || 'Location & Safety'}</span>
+                </div>
+                <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-[#34D399]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>{t('location.sharingOn') || 'Sharing On'}</span>
+                </span>
+              </button>
             </div>
 
             {/* SECTION 3: Community */}

@@ -153,15 +153,26 @@ export function calculateSkillScores(results = [], baselineScores = null) {
  */
 export function selectNextChallenge({
   currentDifficulty = INITIAL_DIFFICULTY,
+  roundIndex = null,
+  scenarioKey = null,
   userSkillScores = null,
   usedIds = [],
   challengesPool = MEMORY_MOTION_CHALLENGES
 }) {
   const targetDiff = Math.max(1.0, Math.min(10.0, Number(currentDifficulty) || INITIAL_DIFFICULTY));
-  const available = challengesPool.filter(c => !usedIds.includes(c.id));
+  
+  // If roundIndex or scenarioKey specified, filter to that scenario
+  let scopedPool = challengesPool;
+  if (roundIndex) {
+    const matched = challengesPool.filter(c => c.roundIndex === roundIndex);
+    if (matched.length > 0) scopedPool = matched;
+  } else if (scenarioKey) {
+    const matched = challengesPool.filter(c => c.scenarioKey === scenarioKey || c.sceneType === scenarioKey);
+    if (matched.length > 0) scopedPool = matched;
+  }
 
-  // If all challenges used, reset pool
-  const pool = available.length > 0 ? available : challengesPool;
+  const available = scopedPool.filter(c => !usedIds.includes(c.id));
+  const pool = available.length > 0 ? available : scopedPool;
 
   // 1. Filter challenges within proximity band
   let candidates = pool.filter(c => Math.abs(c.difficulty - targetDiff) <= 1.8);
@@ -206,7 +217,7 @@ export function selectNextChallenge({
 
   // 3. Closest difficulty match with slight randomization among top 2
   candidates.sort((a, b) => Math.abs(a.difficulty - targetDiff) - Math.abs(b.difficulty - targetDiff));
-  const topChoices = candidates.slice(0, Math.min(3, candidates.length));
+  const topChoices = candidates.slice(0, Math.min(2, candidates.length));
   return topChoices[Math.floor(Math.random() * topChoices.length)];
 }
 
@@ -385,6 +396,32 @@ export async function completeMemoryMotionSession({
     console.warn('Could not save Memory Motion session to Dexie:', err);
   }
 
+  const difficultyDelta = Number((finalDifficulty - startDifficulty).toFixed(1));
+  let direction = 'maintained';
+  if (difficultyDelta > 0.1) direction = 'increased';
+  else if (difficultyDelta < -0.1) direction = 'decreased';
+
+  let reason = 'Steady consistency maintaining optimal cognitive engagement.';
+  if (mistakeCount >= 2 || accuracy < 60) {
+    reason = 'Supportive easing after challenging video rounds to maintain comfort and focus.';
+  } else if (accuracy >= 85) {
+    reason = 'High accuracy across recent activities.';
+  } else if (direction === 'increased') {
+    reason = 'Strong performance and steady response confidence.';
+  } else if (direction === 'decreased') {
+    reason = 'Supportive easing to maintain a gentle and comfortable pace.';
+  }
+
+  const adaptation = {
+    direction,
+    previousDifficulty: `Level ${startDifficulty.toFixed(1)}`,
+    previousDifficultyFull: `Level ${startDifficulty.toFixed(1)} (${startDifficulty < 4.0 ? 'Gentle' : startDifficulty < 7.0 ? 'Balanced' : 'Advanced'})`,
+    newDifficulty: `Level ${finalDifficulty.toFixed(1)}`,
+    newDifficultyFull: `Level ${finalDifficulty.toFixed(1)} (${finalDifficulty < 4.0 ? 'Gentle' : finalDifficulty < 7.0 ? 'Balanced' : 'Advanced'})`,
+    accuracy,
+    reason
+  };
+
   return {
     accuracy,
     correctCount,
@@ -394,7 +431,8 @@ export async function completeMemoryMotionSession({
     finalScore,
     startDifficulty,
     finalDifficulty,
-    difficultyDelta: Number((finalDifficulty - startDifficulty).toFixed(1))
+    difficultyDelta,
+    adaptation
   };
 }
 
